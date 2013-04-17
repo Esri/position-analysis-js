@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=7,IE=9">
+	<!--The viewport meta tag is used to improve the presentation and behavior of the samples 
+		on iOS devices-->
+	<meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no">
+	<title>Position Analysis Web</title>
+	<link rel="stylesheet" href="http://serverapi.arcgisonline.com/jsapi/arcgis/3.4/js/dojo/dijit/themes/claro/claro.css">
+	<link rel="stylesheet" href="http://serverapi.arcgisonline.com/jsapi/arcgis/3.4/js/esri/css/esri.css">
+	<style>
+		html, body {
+			height: 100%; width: 100%; margin: 0; padding: 0;
+			font-family: Arial, Verdana, sans-serif;
+		}
+		#map{
+			padding:0;
+		}
+		#headline {
+			font-size: 30px;
+		}
+	</style>
+
+	<script>var dojoConfig = {parseOnLoad: true};</script>
+	<script src="http://serverapi.arcgisonline.com/jsapi/arcgis/3.4/"></script>
+	<script>
+		var map;
+		var portal;
+		
+		/**
+		 * Try to put all configuration settings here.
+		 */
+		var configOptions = {
+			webmap: "537d73deafbd4b4ead7155ac5fc7348e",
+			portalUrl: "https://afmlocomport.esri.com",
+			sharingPath: "/sharing/content/items",
+			proxyRequired: true,
+			proxyUrl: "/proxy.jsp"
+		}
+		
+		require([
+			"dijit/layout/BorderContainer",
+			"dijit/layout/ContentPane",
+			"dijit/layout/AccordionContainer",
+			"dijit/form/ComboBox",
+			"dijit/form/ToggleButton",
+			"dojox/form/Uploader",
+			"dojox/embed/Flash",
+			"dijit/form/NumberTextBox",
+			"dijit/form/CheckBox",
+			"dijit/form/Select",
+			"dijit/InlineEditBox",
+			"dijit/form/NumberSpinner",
+			"dijit/Menu",
+			"dijit/MenuItem",
+			"esri/map",
+			"esri/layers/ArcGISTiledMapServiceLayer",
+			"esri/IdentityManager",
+			"esri/arcgis/Portal",
+			"esri/arcgis/utils",
+			"dojo/on",
+			"dojo/domReady!"],
+		function (BorderContainer, ContentPane, AccordionContainer, ComboBox, ToggleButton, Uploader, Flash, NumberTextBox, CheckBox, Select, InlineEditBox, NumberSpinner, Menu, MenuItem, Map, ArcGISTiledMapServiceLayer, IdentityManager, Portal, utils, on) {
+			console.log("Welcome to Position Analysis Web, using Dojo version " + dojo.version);
+			
+			esri.arcgis.utils.arcgisUrl = configOptions.portalUrl + configOptions.sharingPath;
+			if (configOptions.proxyRequired) {
+				esri.config.defaults.io.proxyUrl = configOptions.proxyUrl;
+			}
+			
+			portal = new esri.arcgis.Portal(configOptions.portalUrl);			
+
+			//Setup the file upload widget
+			require([],
+			function (FlashOrIFrame) {
+				var uploader = new dojox.form.Uploader({
+					label: "Select files",
+					multiple: true,
+					uploadOnSelect: true,
+					url: "UploadFile.php",
+				}, "addPointsUploader");
+			});
+		});
+		
+		function login() {
+			portal.signIn().then(function (loggedInUser) {
+				//Create the map, based on a Web map
+				var mapDeferred = esri.arcgis.utils.createMap(configOptions.webmap, "map", {
+					mapOptions: {
+						slider: true,
+						nav: false,
+						wrapAround180:true
+					},
+					ignorePopups:false
+				});
+
+				//When the map load completes or errors out, handle it
+				mapDeferred.then(function (response) {
+					//Just save the map control as a variable
+					map = response.map;
+				}, function(error){
+					console.error('Create Map Failed: ' , dojo.toJson(error));
+					//TODO this might be a bad item ID or something else. Tell the user.
+				});
+			}, function (error) {
+				console.error("Couldn't sign in: " + error);
+				//TODO this isn't a bad username/password. It's more fundamental than that, like a bad
+				//     portal URL or even a bad portal. Tell the user.
+			});
+		}
+	</script>
+</head>
+	
+<body class="claro">
+	
+	<!-- Container for all application elements -->
+	<div data-dojo-type="dijit/layout/BorderContainer" 
+			 data-dojo-props="design:'headline', gutters:false"
+			 style="width: 100%; height: 100%; margin: 0;">
+	
+		<!-- Application title -->
+		<div id="headline"
+			data-dojo-type="dijit/layout/ContentPane"
+			data-dojo-props="region: 'top'">
+			Position Analysis Web
+		</div>
+		
+		<!-- The menu with various widgets to display one at a time -->
+		<div id="tools" data-dojo-type="dijit/layout/AccordionContainer" data-dojo-props="region: 'leading'" style="width: 210px">
+		
+			<!-- Widget for adding new map points, one at a time or in a batch -->
+			<div data-dojo-type="dijit/layout/ContentPane" title="Add Map Points">
+				<label for="addPointsTargetLayer">Add to layer:</label>
+				<select data-dojo-type="dijit/form/ComboBox" id="addPointsTargetLayer" name="addPointsTargetLayer" style="width: 100%">
+					<option value="Layer 1">Layer 1</option>
+					<option>Layer 2</option>
+					<option>Layer 3</option>
+				</select>
+				&nbsp;<br/>
+				<button type="button" data-dojo-type="dijit/form/ToggleButton" data-dojo-props="checked: false">
+					Click Points
+				</button>
+				<p>
+					Add point by coordinates:<br/>
+					<label for="addPointsLongitude">Lon (X)</label><input data-dojo-type="dijit/form/NumberTextBox" id="addPointsLongitude" name="addPointsLongitude" data-dojo-props="constraints: { min: -180, max: 180 }" style="width: 120px"/><br/>
+					<label for="addPointsLatitude">Lat (Y)&nbsp;</label><input data-dojo-type="dijit/form/NumberTextBox" id="addPointsLatitude" name="addPointsLatitude" data-dojo-props="constraints: { min: -90, max: 90 }" style="width: 120px"/><br/>
+					or<br/>
+					<label for="addPointsLatitude">MGRS&nbsp;</label><input data-dojo-type="dijit/form/TextBox" id="addPointsMGRS" name="addPointsMGRS" style="width: 120px"/><br/>
+					<button type="button" data-dojo-type="dijit/form/Button">
+						Add Point
+					</button>
+				</p>
+				<p>
+					Drag a CSV to the map or upload here:
+					<div id="addPointsUploader"></div>
+				</p>
+			</div>
+			
+			<!-- Locate Event widget (create bearing lines and merge them to locate the event) -->
+			<div data-dojo-type="dijit/layout/ContentPane" title="Locate Event">
+				<label for="locateEventTargetLayer">Observations layer:</label>
+				<select data-dojo-type="dijit/form/Select" id="locateEventTargetLayer" name="locateEventTargetLayer" style="width: 100%">
+					<option value="Layer 1">Layer 1</option>
+					<option value="Layer 2">Layer 2</option>
+					<option value="Layer 3">Layer 3</option>
+				</select>
+				<p><i>Be sure to set azimuth and distance for each point before running Locate!</i></p>
+				<button type="button" data-dojo-type="dijit/form/Button">
+					Locate
+				</button>
+			</div>
+			
+			<!-- Range rings widget -->
+			<div data-dojo-type="dijit/layout/ContentPane" title="Calculate Range Rings">
+				<label for="rangeRingsTargetLayer">Use these map points:</label>
+				<select data-dojo-type="dijit/form/Select" id="rangeRingsTargetLayer" name="rangeRingsTargetLayer" style="width: 100%">
+					<option value="Layer 1">Layer 1</option>
+					<option value="Layer 2">Layer 2</option>
+					<option value="Layer 3">Layer 3</option>
+				</select>
+				<label for="rangeRingsRingCount">Number of rings</label><input data-dojo-type="dijit/form/NumberSpinner" id="rangeRingsRingCount" name="rangeRingsRingCount" value="4" data-dojo-props="constraints: { min: 1, places: 0}" style="width: 63px"/><br/>
+				<label for="rangeRingsRingCount">Ring interval (m)</label><input data-dojo-type="dijit/form/NumberTextBox" id="rangeRingsDistance" name="rangeRingsDistance" value="250" data-dojo-props="constraints: { min: 0}" style="width: 60px"/><br/>
+				<label for="rangeRingsRadialCount">Number of radials</label><input data-dojo-type="dijit/form/NumberSpinner" id="rangeRingsRadialCount" name="rangeRingsRadialCount" value="4" data-dojo-props="constraints: { min: 1, places: 0}" style="width: 51px"/><br/>
+				<button type="button" data-dojo-type="dijit/form/Button">
+					Calculate
+				</button>
+			</div>
+			
+			<!-- Login/account widget -->
+			<div data-dojo-type="dijit/layout/ContentPane" id="paneMyProfile" name="paneMyProfile" title="My Profile" selected="true">
+				<button type="button" id="buttonOpenLogin" name="buttonOpenLogin" data-dojo-type="dijit/form/Button">Login
+					<script type="dojo/on" data-dojo-event="click" data-dojo-args="evt">
+						login();
+					</script>
+				</button>
+			</div>
+			
+			<!-- Layer list widget -->
+			<div data-dojo-type="dijit/layout/ContentPane" title="Manage Layers">
+				Click: rename layer<br/>
+				Right-click: other options<br/>
+				
+				<input data-dojo-type="dijit/form/CheckBox" id="checkLayers1" name="checkLayers" value="1" checked="true"/>
+				<label id="labelCheckLayers1" for="checkLayers1" data-dojo-type="dijit/InlineEditBox" data-dojo-props="editor: 'dijit/form/TextBox'">Layer 1</label><br/>
+				
+				<input data-dojo-type="dijit/form/CheckBox" id="checkLayers2" name="checkLayers" value="2" checked="true"/>
+				<label id="labelCheckLayers2" for="checkLayers2" data-dojo-type="dijit/InlineEditBox" data-dojo-props="editor: 'dijit/form/TextBox'">Layer 2</label><br/>
+				
+				<input data-dojo-type="dijit/form/CheckBox" id="checkLayers3" name="checkLayers" value="3" checked="true"/>
+				<label id="labelCheckLayers3" for="checkLayers3" data-dojo-type="dijit/InlineEditBox" data-dojo-props="editor: 'dijit/form/TextBox'">Layer 3</label>
+			</div>
+		</div>
+
+		<!-- Map control -->
+		<div id="map" data-dojo-type="dijit/layout/ContentPane" data-dojo-props="region:'center'" style="height: 100%"></div>
+
+	</div>
+
+	<!-- Layer context menu (hidden by default; displayed when and where needed on the layer list) -->
+	<div data-dojo-type="dijit/Menu" id="windowContextMenu" data-dojo-props="targetNodeIds:['labelCheckLayers1', 'labelCheckLayers2', 'labelCheckLayers3']" style="display: none;">
+		<div data-dojo-type="dijit/MenuItem" data-dojo-props="iconClass:'dijitIconTable',
+			onClick:function(){alert('not actually viewing anything, just a test!')}">View Table</div>
+		<div data-dojo-type="dijit/MenuItem" data-dojo-props="iconClass:'dijitIconSave',
+			onClick:function(){alert('not actually downloading anything, just a test!')}">Download Table</div>
+		<div data-dojo-type="dijit/MenuItem" data-dojo-props="iconClass:'dijitIconDelete',
+			onClick:function(){alert('not actually removing anything, just a test!')}">Remove Layer</div>
+	</div>
+</body>
+</html>
