@@ -1,6 +1,3 @@
-var map;
-var portal;
-
 /**
  * Try to put all configuration settings here.
  */
@@ -11,6 +8,10 @@ var configOptions = {
     proxyRequired: true,
     proxyUrl: "/proxy.jsp"
 }
+
+var map;
+var portal;
+var itemInfo;
 
 require([
     "dijit/layout/BorderContainer",
@@ -33,8 +34,9 @@ require([
     "esri/arcgis/Portal",
     "esri/arcgis/utils",
     "dojo/on",
+    "dojo/json",
     "dojo/domReady!"],
-function (BorderContainer, ContentPane, AccordionContainer, ComboBox, ToggleButton, Uploader, Flash, NumberTextBox, CheckBox, Select, InlineEditBox, NumberSpinner, Menu, MenuItem, Map, ArcGISTiledMapServiceLayer, IdentityManager, Portal, utils, on) {
+function (BorderContainer, ContentPane, AccordionContainer, ComboBox, ToggleButton, Uploader, Flash, NumberTextBox, CheckBox, Select, InlineEditBox, NumberSpinner, Menu, MenuItem, Map, ArcGISTiledMapServiceLayer, IdentityManager, Portal, utils, on, JSON) {
     console.log("Welcome to Position Analysis Web, using Dojo version " + dojo.version);
     
     esri.arcgis.utils.arcgisUrl = configOptions.portalUrl + configOptions.sharingPath;
@@ -72,6 +74,8 @@ function login() {
         mapDeferred.then(function (response) {
             //Just save the map control as a variable
             map = response.map;
+            itemInfo = response.itemInfo;
+            //saveWebMap(response.itemInfo.item, response.itemInfo.itemData, loggedInUser);
         }, function(error){
             console.error('Create Map Failed: ' , dojo.toJson(error));
             //TODO this might be a bad item ID or something else. Tell the user.
@@ -81,4 +85,43 @@ function login() {
         //TODO this isn't a bad username/password. It's more fundamental than that, like a bad
         //     portal URL or even a bad portal. Tell the user.
     });
+}
+
+function saveWebMap(item, itemData, loggedInUser) {
+    var cont = item;
+    cont.overwrite = true;
+    cont.f = "json";
+    var seen = [];
+    try {
+        cont.text = JSON.stringify(itemData, function (key, val) {
+            if (typeof val == "object") {
+                if (seen.indexOf(val) >= 0)
+                    return;
+                seen.push(val);
+            }
+            return val;
+        });
+    } catch (ex) {
+        console.error("Error: " + ex);
+    }
+    var xhrArgs = {
+        url: loggedInUser.userContentUrl.replace("/sharing/rest/content/users/", "/sharing/content/users/") + "/addItem?f=json&token=" + loggedInUser.credential.token,
+        token: loggedInUser.credential.token,
+        content: cont,
+        handleAs: "text",
+        headers: {
+            "X-Requested-With": null
+        },
+        load: function (data) {
+            data = dojo.fromJson(data);
+            if (data.success == true) {
+                console.log('Updated item data!');
+            } else { console.error('Failed to update item data!'); }
+        },
+        error: function (error) {
+            console.error(error);
+        }
+    };
+    console.log(xhrArgs);
+    dojo.xhrPost(xhrArgs);
 }
