@@ -2,7 +2,8 @@
  * Try to put all configuration settings here.
  */
 var configOptions = {
-    webmap: "537d73deafbd4b4ead7155ac5fc7348e",
+    webmapTitle: "Position Analysis Web Map",
+    webmapExtent: "70.3685, 34.3767, 70.546, 34.4962",
     portalUrl: "https://afmlocomport.esri.com",
     sharingPath: "/sharing/content/items",
     proxyRequired: true,
@@ -60,26 +61,42 @@ function (BorderContainer, ContentPane, AccordionContainer, ComboBox, ToggleButt
 
 function login() {
     portal.signIn().then(function (loggedInUser) {
-        //Create the map, based on a Web map
-        var mapDeferred = esri.arcgis.utils.createMap(configOptions.webmap, "map", {
-            mapOptions: {
-                slider: true,
-                nav: false,
-                wrapAround180:true
-            },
-            ignorePopups:false
-        });
-
-        //When the map load completes or errors out, handle it
-        mapDeferred.then(function (response) {
-            //Just save the map control as a variable
-            map = response.map;
-            itemInfo = response.itemInfo;
-            //saveWebMap(response.itemInfo.item, response.itemInfo.itemData, loggedInUser);
-        }, function(error){
-            console.error('Create Map Failed: ' , dojo.toJson(error));
-            //TODO this might be a bad item ID or something else. Tell the user.
-        });
+        var queryParams = {
+            q: 'owner:"' + loggedInUser.username + '" AND title:"' + configOptions.webmapTitle + '" AND type:"Web Map"'
+        };
+        portal.queryItems(queryParams).then(function (queryResult) {
+            require(["dojo/request/xhr"], function (xhr) {
+                if (0 == queryResult.total) {
+                    //Read defaultWebMapItemData.json and create from that, or ask the user to choose a Web map to use.
+                    try {
+                        var xhrPromise = xhr("defaultWebMapItemData.json", {
+                            handleAs: "json"
+                        });
+                        xhrPromise.then(function (itemData) {
+                            var item = {
+                                itemType: "text",
+                                owner: loggedInUser.username,
+                                title: configOptions.webmapTitle,
+                                type: "Web Map",
+                                tags: [configOptions.webmapTitle],
+                                snippet: configOptions.webmapTitle,
+                                extent: configOptions.webmapExtent
+                            };
+                            saveWebMap(item, itemData, loggedInUser, function (webMapId) {
+                                loadMap(webMapId);
+                            });
+                        }, function (error) {
+                            console.error("Couldn't get default Web map: " + error);
+                        });
+                    } catch (ex) {
+                        console.error("xhr error: " + ex);
+                        //TODO tell the user it isn't going to work out?
+                    }
+                } else {
+                    loadMap(queryResult.results[0].id);
+                }
+            });
+        });    
     }, function (error) {
         console.error("Couldn't sign in: " + error);
         //TODO this isn't a bad username/password. It's more fundamental than that, like a bad
@@ -87,7 +104,29 @@ function login() {
     });
 }
 
-function saveWebMap(item, itemData, loggedInUser) {
+function loadMap(webMapId) {
+    //Create the map, based on a Web map
+    var mapDeferred = esri.arcgis.utils.createMap(webMapId, "map", {
+        mapOptions: {
+            slider: true,
+            nav: false,
+            wrapAround180:true
+        },
+        ignorePopups:false
+    });
+
+    //When the map load completes or errors out, handle it
+    mapDeferred.then(function (response) {
+        //Just save the map control as a variable
+        map = response.map;
+        itemInfo = response.itemInfo;
+    }, function(error){
+        console.error('Create Map Failed: ' , dojo.toJson(error));
+        //TODO this might be a bad item ID or something else. Tell the user.
+    });
+}
+
+function saveWebMap(item, itemData, loggedInUser, callbackWebMapId) {
     var cont = item;
     cont.overwrite = true;
     cont.f = "json";
@@ -104,24 +143,26 @@ function saveWebMap(item, itemData, loggedInUser) {
     } catch (ex) {
         console.error("Error: " + ex);
     }
-    var xhrArgs = {
-        url: loggedInUser.userContentUrl.replace("/sharing/rest/content/users/", "/sharing/content/users/") + "/addItem?f=json&token=" + loggedInUser.credential.token,
-        token: loggedInUser.credential.token,
-        content: cont,
-        handleAs: "text",
-        headers: {
-            "X-Requested-With": null
-        },
-        load: function (data) {
-            data = dojo.fromJson(data);
-            if (data.success == true) {
-                console.log('Updated item data!');
-            } else { console.error('Failed to update item data!'); }
-        },
-        error: function (error) {
-            console.error(error);
+    require(["dojo/request/xhr"], function (xhr) {
+        try {
+            var xhrPromise = xhr(loggedInUser.userContentUrl.replace("/sharing/rest/content/users/", "/sharing/content/users/") + "/addItem?f=json&token=" + loggedInUser.credential.token, {
+                handleAs: "json",
+                method: "POST",
+                data: cont,
+                headers: {
+                    "X-Requested-With": null
+                }
+            });
+            xhrPromise.then(function (data) {
+                console.log("saveWebMap success!");
+                callbackWebMapId(data.id);
+            }, function (error) {
+                console.log("saveWebMap error: " + error);
+            }, function (evt) {
+                
+            });
+        } catch (ex) {
+            console.error("saveWebMap xhr error: " + ex);
         }
-    };
-    console.log(xhrArgs);
-    dojo.xhrPost(xhrArgs);
+    });
 }
