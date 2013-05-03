@@ -58,6 +58,10 @@ function (BorderContainer, ContentPane, AccordionContainer, ComboBox, ToggleButt
             url: "UploadFile.php",
         }, "addPointsUploader");
     });
+    
+    dojo.ready(function() {
+        setVisibility("buttonSaveMap", false);
+    });
 });
 
 function login() {
@@ -158,6 +162,8 @@ function loadMap(webMapId) {
                 }
             });
         }
+        
+        setVisibility("buttonSaveMap", true);
     }, function(error){
         console.error('Create Map Failed: ' , dojo.toJson(error));
         //TODO this might be a bad item ID or something else. Tell the user.
@@ -209,5 +215,11 @@ function saveWebMap(item, itemData, loggedInUser, callback) {
         } catch (ex) {
             console.error("saveWebMap xhr error: " + ex);
         }
+    });
+}
+
+function setVisibility(widgetId, visible) {
+    require(["dijit/registry"], function (registry) {
+        dojo.style(registry.byId(widgetId).domNode, { visibility: visible ? "visible" : "hidden" });
     });
 }
