@@ -13,6 +13,7 @@ var configOptions = {
 var map;
 var portal;
 var itemInfo;
+var user;
 
 require([
     "dijit/layout/BorderContainer",
@@ -61,6 +62,7 @@ function (BorderContainer, ContentPane, AccordionContainer, ComboBox, ToggleButt
 
 function login() {
     portal.signIn().then(function (loggedInUser) {
+        user = loggedInUser;
         var queryParams = {
             q: 'owner:"' + loggedInUser.username + '" AND title:"' + configOptions.webmapTitle + '" AND type:"Web Map"'
         };
@@ -145,9 +147,12 @@ function loadMap(webMapId) {
                         }
                     });
                     layerListWidget.addChild(checkbox);
-                    var label = domConstruct.create("label", { id: "label" + checkbox.id, "for": checkbox.id, innerHTML: layers[i].title }, layerListDomElement);
+                    var label = domConstruct.create("label", { id: "label" + checkbox.id, "for": checkbox.id, innerHTML: layer.title }, layerListDomElement);
                     var labelEditBox = new dijit.InlineEditBox({
-                        editor: TextBox
+                        editor: TextBox,
+                        onChange: function (value) {
+                            layer.title = value;
+                        }
                     }, label.id);
                     layerContextMenu.bindDomNode(label.id);
                 }
@@ -159,7 +164,14 @@ function loadMap(webMapId) {
     });
 }
 
-function saveWebMap(item, itemData, loggedInUser, callbackWebMapId) {
+function saveMap() {
+    saveWebMap(itemInfo.item, itemInfo.itemData, user);
+}
+
+/**
+ * The "callback" paramater is an optional callback function that takes the Web map ID as a parameter.
+ */
+function saveWebMap(item, itemData, loggedInUser, callback) {
     var cont = item;
     cont.overwrite = true;
     cont.f = "json";
@@ -188,7 +200,7 @@ function saveWebMap(item, itemData, loggedInUser, callbackWebMapId) {
             });
             xhrPromise.then(function (data) {
                 console.log("saveWebMap success!");
-                callbackWebMapId(data.id);
+                callback(data.id);
             }, function (error) {
                 console.log("saveWebMap error: " + error);
             }, function (evt) {

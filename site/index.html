@@ -103,10 +103,15 @@
             </div>
             
             <!-- Login/account widget -->
-            <div data-dojo-type="dijit/layout/ContentPane" id="paneMyProfile" name="paneMyProfile" title="My Profile" selected="true">
+            <div data-dojo-type="dijit/layout/ContentPane" id="paneSettings" name="paneSettings" title="Settings" selected="true">
                 <button type="button" id="buttonOpenLogin" name="buttonOpenLogin" data-dojo-type="dijit/form/Button">Login
                     <script type="dojo/on" data-dojo-event="click" data-dojo-args="evt">
                         login();
+                    </script>
+                </button><br/>
+                <button type="button" id="buttonSaveMap" name="buttonSaveMap" data-dojo-type="dijit/form/Button">Save Map
+                    <script type="dojo/on" data-dojo-event="click" data-dojo-args="evt">
+                        saveMap();
                     </script>
                 </button>
             </div>
