@@ -47,11 +47,7 @@
             <!-- Widget for adding new map points, one at a time or in a batch -->
             <div data-dojo-type="dijit/layout/ContentPane" title="Add Map Points">
                 <label for="addPointsTargetLayer">Add to layer:</label>
-                <select data-dojo-type="dijit/form/ComboBox" id="addPointsTargetLayer" name="addPointsTargetLayer" style="width: 100%">
-                    <option value="Layer 1">Layer 1</option>
-                    <option>Layer 2</option>
-                    <option>Layer 3</option>
-                </select>
+                <select data-dojo-type="dijit/form/Select" id="addPointsTargetLayer" name="addPointsTargetLayer" style="width: 100%"></select>
                 &nbsp;<br/>
                 <button type="button" data-dojo-type="dijit/form/ToggleButton" data-dojo-props="checked: false">
                     Click Points
@@ -75,11 +71,7 @@
             <!-- Locate Event widget (create bearing lines and merge them to locate the event) -->
             <div data-dojo-type="dijit/layout/ContentPane" title="Locate Event">
                 <label for="locateEventTargetLayer">Observations layer:</label>
-                <select data-dojo-type="dijit/form/Select" id="locateEventTargetLayer" name="locateEventTargetLayer" style="width: 100%">
-                    <option value="Layer 1">Layer 1</option>
-                    <option value="Layer 2">Layer 2</option>
-                    <option value="Layer 3">Layer 3</option>
-                </select>
+                <select data-dojo-type="dijit/form/Select" id="locateEventTargetLayer" name="locateEventTargetLayer" style="width: 100%"></select>
                 <p><i>Be sure to set azimuth and distance for each point before running Locate!</i></p>
                 <button type="button" data-dojo-type="dijit/form/Button">
                     Locate
@@ -89,11 +81,7 @@
             <!-- Range rings widget -->
             <div data-dojo-type="dijit/layout/ContentPane" title="Calculate Range Rings">
                 <label for="rangeRingsTargetLayer">Use these map points:</label>
-                <select data-dojo-type="dijit/form/Select" id="rangeRingsTargetLayer" name="rangeRingsTargetLayer" style="width: 100%">
-                    <option value="Layer 1">Layer 1</option>
-                    <option value="Layer 2">Layer 2</option>
-                    <option value="Layer 3">Layer 3</option>
-                </select>
+                <select data-dojo-type="dijit/form/Select" id="rangeRingsTargetLayer" name="rangeRingsTargetLayer" style="width: 100%"></select>
                 <label for="rangeRingsRingCount">Number of rings</label><input data-dojo-type="dijit/form/NumberSpinner" id="rangeRingsRingCount" name="rangeRingsRingCount" value="4" data-dojo-props="constraints: { min: 1, places: 0}" style="width: 63px"/><br/>
                 <label for="rangeRingsRingCount">Ring interval (m)</label><input data-dojo-type="dijit/form/NumberTextBox" id="rangeRingsDistance" name="rangeRingsDistance" value="250" data-dojo-props="constraints: { min: 0}" style="width: 60px"/><br/>
                 <label for="rangeRingsRadialCount">Number of radials</label><input data-dojo-type="dijit/form/NumberSpinner" id="rangeRingsRadialCount" name="rangeRingsRadialCount" value="4" data-dojo-props="constraints: { min: 1, places: 0}" style="width: 51px"/><br/>

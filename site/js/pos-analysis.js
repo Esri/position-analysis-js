@@ -19,7 +19,6 @@ require([
     "dijit/layout/BorderContainer",
     "dijit/layout/ContentPane",
     "dijit/layout/AccordionContainer",
-    "dijit/form/ComboBox",
     "dijit/form/ToggleButton",
     "dojox/form/Uploader",
     "dojox/embed/Flash",
@@ -38,7 +37,7 @@ require([
     "dojo/on",
     "dojo/json",
     "dojo/domReady!"],
-function (BorderContainer, ContentPane, AccordionContainer, ComboBox, ToggleButton, Uploader, Flash, NumberTextBox, CheckBox, Select, InlineEditBox, NumberSpinner, Menu, MenuItem, Map, ArcGISTiledMapServiceLayer, IdentityManager, Portal, utils, on, JSON) {
+function (BorderContainer, ContentPane, AccordionContainer, ToggleButton, Uploader, Flash, NumberTextBox, CheckBox, Select, InlineEditBox, NumberSpinner, Menu, MenuItem, Map, ArcGISTiledMapServiceLayer, IdentityManager, Portal, utils, on, JSON) {
     console.log("Welcome to Position Analysis Web, using Dojo version " + dojo.version);
     
     esri.arcgis.utils.arcgisUrl = configOptions.portalUrl + configOptions.sharingPath;
@@ -132,6 +131,7 @@ function loadMap(webMapId) {
                 var layerListDomElement = dojo.byId("layerList");
                 var layerContextMenu = registry.byId("layerContextMenu");
                 var layers = itemInfo.itemData.operationalLayers;
+                var layerSelectOptionsList = [];
                 var i;
                 for (i = 0; i < layers.length; i++) {
                     var layer = layers[i];
@@ -159,7 +159,15 @@ function loadMap(webMapId) {
                         }
                     }, label.id);
                     layerContextMenu.bindDomNode(label.id);
+                    
+                    layerSelectOptionsList.push({
+                        label: layer.title,
+                        value: layer.id
+                    });
                 }
+                registry.byId("addPointsTargetLayer").addOption(layerSelectOptionsList);
+                registry.byId("locateEventTargetLayer").addOption(layerSelectOptionsList);
+                registry.byId("rangeRingsTargetLayer").addOption(layerSelectOptionsList);
             });
         }
         
