@@ -120,6 +120,39 @@ function loadMap(webMapId) {
         //Just save the map control as a variable
         map = response.map;
         itemInfo = response.itemInfo;
+        if (itemInfo && itemInfo.itemData && itemInfo.itemData.operationalLayers) {
+            require(["dijit/registry", "dojo/dom-construct", "dijit/InlineEditBox", "dijit/form/TextBox"], function (registry, domConstruct, InlineEditBox, TextBox) {
+                var layerListWidget = registry.byId("layerList");
+                var layerListDomElement = dojo.byId("layerList");
+                var layerContextMenu = registry.byId("layerContextMenu");
+                var layers = itemInfo.itemData.operationalLayers;
+                var i;
+                for (i = 0; i < layers.length; i++) {
+                    var layer = layers[i];
+                    var br = domConstruct.create("br", null, layerListDomElement);
+                    var checkbox = new dijit.form.CheckBox({
+                        id: "checkLayers" + layer.id,
+                        name: "checkLayers",
+                        checked: layer.visibility,
+                        value: layer.id,
+                        onChange: function (checked) {
+                            layer.visibility = checked;
+                            var graphicsLayers = layer.featureCollection.layers;
+                            var j;
+                            for (j = 0; j < graphicsLayers.length; j++) {
+                                map.getLayer(graphicsLayers[j].id).setVisibility(checked);
+                            }
+                        }
+                    });
+                    layerListWidget.addChild(checkbox);
+                    var label = domConstruct.create("label", { id: "label" + checkbox.id, "for": checkbox.id, innerHTML: layers[i].title }, layerListDomElement);
+                    var labelEditBox = new dijit.InlineEditBox({
+                        editor: TextBox
+                    }, label.id);
+                    layerContextMenu.bindDomNode(label.id);
+                }
+            });
+        }
     }, function(error){
         console.error('Create Map Failed: ' , dojo.toJson(error));
         //TODO this might be a bad item ID or something else. Tell the user.

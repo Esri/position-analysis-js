@@ -112,18 +112,9 @@
             </div>
             
             <!-- Layer list widget -->
-            <div data-dojo-type="dijit/layout/ContentPane" title="Manage Layers">
+            <div data-dojo-type="dijit/layout/ContentPane" id="layerList" name="layerList" title="Manage Layers">
                 Click: rename layer<br/>
-                Right-click: other options<br/>
-                
-                <input data-dojo-type="dijit/form/CheckBox" id="checkLayers1" name="checkLayers" value="1" checked="true"/>
-                <label id="labelCheckLayers1" for="checkLayers1" data-dojo-type="dijit/InlineEditBox" data-dojo-props="editor: 'dijit/form/TextBox'">Layer 1</label><br/>
-                
-                <input data-dojo-type="dijit/form/CheckBox" id="checkLayers2" name="checkLayers" value="2" checked="true"/>
-                <label id="labelCheckLayers2" for="checkLayers2" data-dojo-type="dijit/InlineEditBox" data-dojo-props="editor: 'dijit/form/TextBox'">Layer 2</label><br/>
-                
-                <input data-dojo-type="dijit/form/CheckBox" id="checkLayers3" name="checkLayers" value="3" checked="true"/>
-                <label id="labelCheckLayers3" for="checkLayers3" data-dojo-type="dijit/InlineEditBox" data-dojo-props="editor: 'dijit/form/TextBox'">Layer 3</label>
+                Right-click: other options
             </div>
         </div>
 
@@ -133,7 +124,7 @@
     </div>
 
     <!-- Layer context menu (hidden by default; displayed when and where needed on the layer list) -->
-    <div data-dojo-type="dijit/Menu" id="windowContextMenu" data-dojo-props="targetNodeIds:['labelCheckLayers1', 'labelCheckLayers2', 'labelCheckLayers3']" style="display: none;">
+    <div data-dojo-type="dijit/Menu" id="layerContextMenu" style="display: none;">
         <div data-dojo-type="dijit/MenuItem" data-dojo-props="iconClass:'dijitIconTable',
             onClick:function(){alert('not actually viewing anything, just a test!')}">View Table</div>
         <div data-dojo-type="dijit/MenuItem" data-dojo-props="iconClass:'dijitIconSave',
