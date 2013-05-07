@@ -231,3 +231,50 @@ function setVisibility(widgetId, visible) {
         dojo.style(registry.byId(widgetId).domNode, { visibility: visible ? "visible" : "hidden" });
     });
 }
+
+function addPoint(layerId, x, y) {
+    var i;
+    for (i = 0; i < itemInfo.itemData.operationalLayers.length; i++) {
+        if (layerId == itemInfo.itemData.operationalLayers[i].id) {
+            var j;
+            for (j = 0; j < itemInfo.itemData.operationalLayers[i].featureCollection.layers.length; j++) {
+                if ("esriGeometryPoint" == itemInfo.itemData.operationalLayers[i].featureCollection.layers[j].featureSet.geometryType) {
+                    var point = esri.geometry.geographicToWebMercator(new esri.geometry.Point(x, y));
+                    var sr = point.sr;
+                    var newFeature = {
+                        geometry: {
+                            x: point.x,
+                            y: point.y,
+                            spatialReference: {
+                                wkid: 102100
+                            }
+                        },
+                        attributes: {
+                            VISIBLE: true,
+                            TITLE: "New Point",
+                            TYPEID: 1,
+                            OBJECTID: getNextObjectId(itemInfo.itemData.operationalLayers[i].featureCollection.layers[j].featureSet)
+                        }
+                    };
+                    itemInfo.itemData.operationalLayers[i].featureCollection.layers[j].featureSet.features.push(newFeature);
+                    
+                    var graphicsLayer = map.getLayer(itemInfo.itemData.operationalLayers[i].featureCollection.layers[j].id);
+                    var graphic = new esri.Graphic(newFeature);
+                    graphicsLayer.add(graphic);
+                    break;
+                }
+            }
+        }
+    }
+}
+
+function getNextObjectId(featureSet) {
+    var maxObjectId = 0;
+    var i;
+    for (i = 0; i < featureSet.features.length; i++) {
+        if (featureSet.features[i].attributes.OBJECTID > maxObjectId) {
+            maxObjectId = featureSet.features[i].attributes.OBJECTID;
+        }
+    }
+    return maxObjectId + 1;
+}

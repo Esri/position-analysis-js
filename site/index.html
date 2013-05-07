@@ -45,7 +45,7 @@
         <div id="tools" data-dojo-type="dijit/layout/AccordionContainer" data-dojo-props="region: 'leading'" style="width: 210px">
         
             <!-- Widget for adding new map points, one at a time or in a batch -->
-            <div data-dojo-type="dijit/layout/ContentPane" title="Add Map Points">
+            <div data-dojo-type="dijit/layout/ContentPane" title="Add Features">
                 <label for="addPointsTargetLayer">Add to layer:</label>
                 <select data-dojo-type="dijit/form/Select" id="addPointsTargetLayer" name="addPointsTargetLayer" style="width: 100%"></select>
                 &nbsp;<br/>
@@ -56,7 +56,18 @@
                     Add point by coordinates:<br/>
                     <label for="addPointsLongitude">Lon (X)</label><input data-dojo-type="dijit/form/NumberTextBox" id="addPointsLongitude" name="addPointsLongitude" data-dojo-props="constraints: { min: -180, max: 180 }" style="width: 120px"/><br/>
                     <label for="addPointsLatitude">Lat (Y)&nbsp;</label><input data-dojo-type="dijit/form/NumberTextBox" id="addPointsLatitude" name="addPointsLatitude" data-dojo-props="constraints: { min: -90, max: 90 }" style="width: 120px"/><br/>
-                    or<br/>
+                    <button type="button" data-dojo-type="dijit/form/Button">Add Point
+                        <script type="dojo/on" data-dojo-event="click" data-dojo-args="evt">
+                            var addPointsLongitude = dijit.registry.byId("addPointsLongitude");
+                            if (addPointsLongitude.validate()) {
+                                var addPointsLatitude = dijit.registry.byId("addPointsLatitude");
+                                if (addPointsLatitude.validate()) {
+                                    addPoint(dijit.registry.byId("addPointsTargetLayer").value, addPointsLongitude.value, addPointsLatitude.value);
+                                }
+                            }
+                        </script>
+                    </button>
+                    <br/>
                     <label for="addPointsLatitude">MGRS&nbsp;</label><input data-dojo-type="dijit/form/TextBox" id="addPointsMGRS" name="addPointsMGRS" style="width: 120px"/><br/>
                     <button type="button" data-dojo-type="dijit/form/Button">
                         Add Point
@@ -105,10 +116,7 @@
             </div>
             
             <!-- Layer list widget -->
-            <div data-dojo-type="dijit/layout/ContentPane" id="layerList" name="layerList" title="Manage Layers">
-                Click: rename layer<br/>
-                Right-click: other options
-            </div>
+            <div data-dojo-type="dijit/layout/ContentPane" id="layerList" name="layerList" title="Manage Layers"></div>
         </div>
 
         <!-- Map control -->
