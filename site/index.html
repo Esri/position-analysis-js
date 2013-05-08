@@ -25,6 +25,7 @@
     <script>var dojoConfig = {parseOnLoad: true};</script>
     <script src="http://serverapi.arcgisonline.com/jsapi/arcgis/3.4/"></script>
     <script src="js/pos-analysis.js"></script>
+    <script src="js/usng.js"></script>
 </head>
     
 <body class="claro">
@@ -69,8 +70,15 @@
                     </button>
                     <br/>
                     <label for="addPointsLatitude">MGRS&nbsp;</label><input data-dojo-type="dijit/form/TextBox" id="addPointsMGRS" name="addPointsMGRS" style="width: 120px"/><br/>
-                    <button type="button" data-dojo-type="dijit/form/Button">
-                        Add Point
+                    <button type="button" data-dojo-type="dijit/form/Button">Add Point
+                        <script type="dojo/on" data-dojo-event="click" data-dojo-args="evt">
+                            var addPointsMGRS = dijit.registry.byId("addPointsMGRS");
+                            var latLon = new Array(2);
+                            org.mymanatee.common.usng.USNGtoLL(addPointsMGRS.value, latLon);
+                            if (!isNaN(latLon[0]) && !(isNaN(latLon[1]))) {
+                                addPoint(dijit.registry.byId("addPointsTargetLayer").value, latLon[1], latLon[0]);
+                            }
+                        </script>
                     </button>
                 </p>
                 <p>
