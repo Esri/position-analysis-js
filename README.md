@@ -19,7 +19,7 @@ CA root certificate to the trust store of the JRE that runs your Web server.) Di
 platforms and Web servers.
 
 Deploy the [site](site) directory as a Web application in your HTTPS-enabled Web server with a context name of your choice.
-Open site/js/pos-analysis.js in a text editor and edit the variables at the top of the file as necessary:
+Open [site/js/pos-analysis.js](site/js/pos-analysis.js) in a text editor and edit the variables at the top of the file as necessary:
 
 - webmapTitle: the title of the expected Web map. If the user does not own a Web map with that title,
                a Web map with that title will be created.
