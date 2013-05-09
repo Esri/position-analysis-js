@@ -3,6 +3,36 @@ position-analysis-js
 
 Position Analysis Web template
 
+## Setup
+
+The Position Analysis Web template uses Portal for ArcGIS or ArcGIS Online. You'll need the portal URL
+in order to set up the application.
+
+You must deploy the Web application on a HTTPS-enabled Web server, or else the login to Portal or ArcGIS Online
+will not work.
+
+If using [the ArcGIS proxy page](http://developers.arcgis.com/en/javascript/jshelp/ags_proxy.html),
+and if the Portal certificate is self-signed or issued by a non-standard certificate authority (CA), you have to configure
+the Web server that is hosting the proxy page to trust the certificate and/or CA. The directions for this vary based on which
+proxy page you choose--ASP.NET, Java, or PHP. (For example, for the Java proxy page, you must use the JDK's keytool to add the
+CA root certificate to the trust store of the JRE that runs your Web server.) Directions are available on the Web for various
+platforms and Web servers.
+
+Deploy the [site](site) directory as a Web application in your HTTPS-enabled Web server with a context name of your choice.
+Open site/js/pos-analysis.js in a text editor and edit the variables at the top of the file as necessary:
+
+- webmapTitle: the title of the expected Web map. If the user does not own a Web map with that title,
+               a Web map with that title will be created.
+- webmapExtent: the initial extent for a Web map created by this application.
+- portalUrl: the Portal for ArcGIS URL.
+- sharingPath: a relative path such that portalUrl + sharingPath is the full sharing URL for the portal.
+- proxyRequired: true if the ArcGIS API for JavaScript needs to use a proxy and false otherwise.
+                 A proxy is required when hosting the application on a different domain than Portal
+                 for ArcGIS and may be required in other situations. Read
+                 [the proxy page documentation](http://developers.arcgis.com/en/javascript/jshelp/ags_proxy.html)
+                 for further details.
+- proxyUrl: the relative or absolute URL to the proxy page.
+
 ## Licensing
 
 Copyright 2012 Esri
