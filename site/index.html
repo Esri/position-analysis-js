@@ -63,7 +63,7 @@
                             if (addPointsLongitude.validate()) {
                                 var addPointsLatitude = dijit.registry.byId("addPointsLatitude");
                                 if (addPointsLatitude.validate()) {
-                                    addPoint(dijit.registry.byId("addPointsTargetLayer").value, addPointsLongitude.value, addPointsLatitude.value);
+                                    addPoint(dijit.registry.byId("addPointsTargetLayer").value, addPointsLongitude.value, addPointsLatitude.value, true);
                                 }
                             }
                         </script>
@@ -76,7 +76,7 @@
                             var latLon = new Array(2);
                             org.mymanatee.common.usng.USNGtoLL(addPointsMGRS.value, latLon);
                             if (!isNaN(latLon[0]) && !(isNaN(latLon[1]))) {
-                                addPoint(dijit.registry.byId("addPointsTargetLayer").value, latLon[1], latLon[0]);
+                                addPoint(dijit.registry.byId("addPointsTargetLayer").value, latLon[1], latLon[0], true);
                             }
                         </script>
                     </button>
@@ -140,6 +140,25 @@
             onClick:function(){alert('not actually downloading anything, just a test!')}">Download Table</div>
         <div data-dojo-type="dijit/MenuItem" data-dojo-props="iconClass:'dijitIconDelete',
             onClick:function(){alert('not actually removing anything, just a test!')}">Remove Layer</div>
+    </div>
+    
+    <!-- Popup InfoTemplate content (hidden; only innerHTML of this div is used; search for dojo.byId("infoTemplateContent") in JavaScript code for details) -->
+    <div id="infoTemplateContent" style="display: none;">
+        <table border="0">
+            <tr>
+                <td>Title</td>
+                <td><input type='text' id='TITLE' name='TITLE' value='${TITLE}' onchange='setFieldValue("${OBJECTID}", "TITLE", this.value);' /></td>
+            </tr>
+            <tr>
+                <td>Azimuth</td>
+                <td><input type='text' id='AZIMUTH' name='AZIMUTH' value='${AZIMUTH}' onchange='setFieldValue("${OBJECTID}", "AZIMUTH", this.value);' /></td>
+            </tr>
+            <tr>
+                <td>Distance</td>
+                <td><input type='text' id='DISTANCE' name='DISTANCE' value='${DISTANCE}' onchange='setFieldValue("${OBJECTID}", "DISTANCE", this.value);' /></td>
+            </tr>
+            <input type='hidden' id='OBJECTID' name='OBJECTID' value='${OBJECTID}' />
+        </table>
     </div>
 </body>
 </html>

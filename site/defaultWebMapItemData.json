@@ -251,41 +251,7 @@
                         },
                         "featureSet": {
                             "geometryType": "esriGeometryPolygon",
-                            "features": [
-                                {
-                                    "geometry": {
-                                        "rings": [
-                                            [
-                                                [
-                                                    7842371.059076617,
-                                                    4085990.229449344
-                                                ],
-                                                [
-                                                    7843288.303416037,
-                                                    4087824.7181281857
-                                                ],
-                                                [
-                                                    7844205.547755457,
-                                                    4085990.229449344
-                                                ],
-                                                [
-                                                    7842371.059076617,
-                                                    4085990.229449344
-                                                ]
-                                            ]
-                                        ],
-                                        "spatialReference": {
-                                            "wkid": 102100
-                                        }
-                                    },
-                                    "attributes": {
-                                        "VISIBLE": 1,
-                                        "TITLE": "Map Notes Polygon",
-                                        "TYPEID": 0,
-                                        "OBJECTID": 0
-                                    }
-                                }
-                            ]
+                            "features": []
                         },
                         "nextObjectId": 1,
                         "visibility": true,
@@ -432,33 +398,7 @@
                         },
                         "featureSet": {
                             "geometryType": "esriGeometryPolyline",
-                            "features": [
-                                {
-                                    "geometry": {
-                                        "paths": [
-                                            [
-                                                [
-                                                    7841511.142508409,
-                                                    4088417.105097395
-                                                ],
-                                                [
-                                                    7842218.185020045,
-                                                    4086487.0701331967
-                                                ]
-                                            ]
-                                        ],
-                                        "spatialReference": {
-                                            "wkid": 102100
-                                        }
-                                    },
-                                    "attributes": {
-                                        "VISIBLE": 1,
-                                        "TITLE": "Map Notes Line",
-                                        "TYPEID": 0,
-                                        "OBJECTID": 0
-                                    }
-                                }
-                            ]
+                            "features": []
                         },
                         "nextObjectId": 1,
                         "visibility": true,
@@ -680,23 +620,7 @@
                         },
                         "featureSet": {
                             "geometryType": "esriGeometryPoint",
-                            "features": [
-                                {
-                                    "geometry": {
-                                        "x": 7840632.11668313,
-                                        "y": 4087270.549673119,
-                                        "spatialReference": {
-                                            "wkid": 102100
-                                        }
-                                    },
-                                    "attributes": {
-                                        "VISIBLE": 1,
-                                        "TITLE": "Map Notes Point",
-                                        "TYPEID": 1,
-                                        "OBJECTID": 0
-                                    }
-                                }
-                            ]
+                            "features": []
                         },
                         "nextObjectId": 1,
                         "visibility": true,
