@@ -16,6 +16,7 @@ var map;
 var portal;
 var itemInfo;
 var user;
+var drawToolbar;
 
 require([
     "dijit/layout/BorderContainer",
@@ -36,10 +37,11 @@ require([
     "esri/IdentityManager",
     "esri/arcgis/Portal",
     "esri/arcgis/utils",
+    "esri/toolbars/draw",
     "dojo/on",
     "dojo/json",
     "dojo/domReady!"],
-function (BorderContainer, ContentPane, AccordionContainer, ToggleButton, Uploader, Flash, NumberTextBox, CheckBox, Select, InlineEditBox, NumberSpinner, Menu, MenuItem, Map, ArcGISTiledMapServiceLayer, IdentityManager, Portal, utils, on, JSON) {
+function (BorderContainer, ContentPane, AccordionContainer, ToggleButton, Uploader, Flash, NumberTextBox, CheckBox, Select, InlineEditBox, NumberSpinner, Menu, MenuItem, Map, ArcGISTiledMapServiceLayer, IdentityManager, Portal, utils, Draw, on, JSON) {
     console.log("Welcome to Position Analysis Web, using Dojo version " + dojo.version);
     
     esri.arcgis.utils.arcgisUrl = configOptions.portalUrl + configOptions.sharingPath;
@@ -174,6 +176,12 @@ function loadMap(webMapId) {
     mapDeferred.then(function (response) {
         //Just save the map control as a variable
         map = response.map;
+        
+        drawToolbar = new esri.toolbars.Draw(map);
+        dojo.connect(drawToolbar, "onDrawComplete", function (evt) {
+            drawToolbar.deactivate();
+            addPoint(dijit.registry.byId("addPointsTargetLayer").value, evt.geographicGeometry.x, evt.geographicGeometry.y, false);
+        });
         
         var infoTemplateContentDiv = dojo.byId("infoTemplateContent");
         var outerHtml = infoTemplateContentDiv.outerHTML;
