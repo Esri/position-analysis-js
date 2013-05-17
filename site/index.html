@@ -50,8 +50,10 @@
                 <label for="addPointsTargetLayer">Add to layer:</label>
                 <select data-dojo-type="dijit/form/Select" id="addPointsTargetLayer" name="addPointsTargetLayer" style="width: 100%"></select>
                 &nbsp;<br/>
-                <button type="button" data-dojo-type="dijit/form/ToggleButton" data-dojo-props="checked: false">
-                    Click Points
+                <button type="button" id="btnClickPoints" name="btnClickPoints" data-dojo-type="dijit/form/ToggleButton" data-dojo-props="checked: false">Click Points
+                    <script type="dojo/on" data-dojo-event="click" data-dojo-args="evt">
+                        drawToolbar.activate(esri.toolbars.Draw.POINT);
+                    </script>
                 </button>
                 <p>
                     Add point by coordinates:<br/>
