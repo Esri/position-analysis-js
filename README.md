@@ -5,7 +5,7 @@ Position Analysis Web template
 
 ## Setup
 
-The Position Analysis Web template uses Portal for ArcGIS or ArcGIS Online. You'll need the portal URL
+The Position Analysis Web template uses Portal for ArcGIS 10.2+ or ArcGIS Online. You'll need the portal URL
 in order to set up the application.
 
 You must deploy the Web application on a HTTPS-enabled Web server, or else the login to Portal or ArcGIS Online
@@ -32,6 +32,9 @@ Open [site/js/pos-analysis.js](site/js/pos-analysis.js) in a text editor and edi
                  [the proxy page documentation](http://developers.arcgis.com/en/javascript/jshelp/ags_proxy.html)
                  for further details.
 - proxyUrl: the relative or absolute URL to the proxy page.
+
+Open index.html and edit the ArcGIS API for JavaScript URLs, including the JavaScript link and the CSS links. If using
+Portal for ArcGIS, you should use the ArcGIS API for JavaScript included with the portal.
 
 ## Licensing
 
