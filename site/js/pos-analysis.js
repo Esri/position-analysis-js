@@ -59,15 +59,17 @@ function (BorderContainer, ContentPane, AccordionContainer, ToggleButton, Upload
     portal = new esri.arcgis.Portal(configOptions.portalUrl);            
 
     //Setup the file upload widget
-    require([],
-    function (FlashOrIFrame) {
-        var uploader = new dojox.form.Uploader({
-            label: "Select files",
-            multiple: true,
-            uploadOnSelect: true,
-            url: "UploadFile.php",
-        }, "addPointsUploader");
-    });
+    var fileInput = new Uploader({
+        onChange: function (evt) {
+            var input = this.focusNode;
+            if (input.files && 0 < input.files.length) {
+                var file = input.files[0];
+                if (file.name.indexOf(".csv") !== -1) {
+                    readCsvFile(file);
+                }
+            }
+        }
+    }, "addShapesUploader");
     
     dojo.ready(function() {
         setVisibility("buttonSaveMap", false);
