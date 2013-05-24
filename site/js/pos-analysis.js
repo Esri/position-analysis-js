@@ -197,7 +197,7 @@ function readCsvFile(file) {
                 var itemIndex;
                 for (itemIndex = 0; itemIndex < items.length; itemIndex++) {
                     var item = items[itemIndex];
-                    var lon, lat, mgrs, distance, azimuth, title, shapeJson;
+                    var lon = undefined, lat = undefined, mgrs = undefined, distance = undefined, azimuth = undefined, title = undefined, shapeJson = undefined;
                     var attNames = csvStore.getAttributes(item);
                     var attNamesIndex;
                     for (attNamesIndex = 0; attNamesIndex < attNames.length; attNamesIndex++) {
