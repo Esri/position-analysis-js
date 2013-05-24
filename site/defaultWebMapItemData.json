@@ -423,7 +423,7 @@
                                                 "width": 24,
                                                 "contentType": "image/png",
                                                 "type": "esriPMS",
-                                                "url": "https://AFMLOCOMPORT.ESRI.COM/images/Symbols/Basic/GreenStickpin.png"
+                                                "url": "http://afmcomstaging.esri.com/arcgis/portalimages/Symbols/Basic/GreenStickpin.png"
                                             },
                                             "description": "",
                                             "value": "0",
@@ -437,7 +437,7 @@
                                                 "width": 24,
                                                 "contentType": "image/png",
                                                 "type": "esriPMS",
-                                                "url": "https://AFMLOCOMPORT.ESRI.COM/images/Symbols/Basic/GreenShinyPin.png"
+                                                "url": "http://afmcomstaging.esri.com/arcgis/portalimages/Symbols/Basic/GreenShinyPin.png"
                                             },
                                             "value": "1",
                                             "label": "Pushpin"

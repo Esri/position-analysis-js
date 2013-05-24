@@ -4,10 +4,17 @@
 var configOptions = {
     webmapTitle: "Position Analysis Web Map",
     webmapExtent: "70.3685, 34.3767, 70.546, 34.4962",
-    portalUrl: "https://afmlocomport.esri.com",
+    portalUrl: "https://afmcomstaging.esri.com/arcgis",
     sharingPath: "/sharing/content/items",
     proxyRequired: true,
-    proxyUrl: "/proxy.jsp"
+    proxyUrl: "/proxy.jsp",
+    longitudeNamesUppercase: [ "LON", "LONG", "LONGITUDE", "X" ],
+    latitudeNamesUppercase: [ "LAT", "LATITUDE", "Y" ],
+    mgrsNamesUppercase: [ "MGRS" ],
+    azimuthNamesUppercase: [ "AZIMUTH", "BEARING", "HEADING", "ANGLE" ],
+    distanceNamesUppercase: [ "DISTANCE", "DIST" ],
+    titleNamesUppercase: [ "TITLE", "NAME", "LABEL" ],
+    shapeNamesUppercase: [ "SHAPE", "GEOMETRY", "GEOM" ]
 }
 
 var LAYER_ID_KEY = "layerId";
@@ -118,7 +125,7 @@ function setInfoTemplate(infoTemplateContent, addLayerIdInput) {
     for (graphicsLayerIndex = 0; graphicsLayerIndex < map.graphicsLayerIds.length; graphicsLayerIndex++) {
         var graphicsLayerId = map.graphicsLayerIds[graphicsLayerIndex];
         var graphicsLayer = map.getLayer(graphicsLayerId);
-        var infoTemplate = new esri.InfoTemplate("", infoTemplateContent);
+        var infoTemplate = new esri.InfoTemplate("${TITLE}", infoTemplateContent);
         if (addLayerIdInput) {
             infoTemplate.content += "<input type='hidden' id='" + LAYER_ID_KEY + "' name='" + LAYER_ID_KEY + "' value='" + graphicsLayerId + "' />";
         }
@@ -161,6 +168,79 @@ function setFieldValue(objectId, fieldName, newValue) {
     }
 }
 
+function handleDrop(evt) {
+    evt.preventDefault();
+    // Reference
+    // http://www.html5rocks.com/tutorials/file/dndfiles/
+    // https://developer.mozilla.org/en/Using_files_from_web_applications
+    var dataTransfer = evt.dataTransfer;
+    var files = dataTransfer.files;
+    var types = dataTransfer.types;
+
+    // File drop?
+    if (files && files.length === 1) {
+        var file = files[0];
+        if (file.name.indexOf(".csv") !== -1) {
+            readCsvFile(file);
+        }
+    }
+}
+
+function readCsvFile(file) {
+    var fileReader = new FileReader();
+    fileReader.onloadend = function (onloadendEvent) {
+        require(["dojox/data/CsvStore"], function (CsvStore) {
+            var csvStore = new CsvStore({data: fileReader.result});
+            csvStore.fetch({onComplete: function (items, request) {
+                var itemIndex;
+                for (itemIndex = 0; itemIndex < items.length; itemIndex++) {
+                    var item = items[itemIndex];
+                    var lon, lat, mgrs, distance, azimuth, title, shapeJson;
+                    var attNames = csvStore.getAttributes(item);
+                    var attNamesIndex;
+                    for (attNamesIndex = 0; attNamesIndex < attNames.length; attNamesIndex++) {
+                        var attName = attNames[attNamesIndex];
+                        var attNamesUpper = attName.toUpperCase();
+                        if (-1 < configOptions.longitudeNamesUppercase.indexOf(attNamesUpper)) {
+                            lon = csvStore.getValue(item, attName);
+                        } else if (-1 < configOptions.latitudeNamesUppercase.indexOf(attNamesUpper)) {
+                            lat = csvStore.getValue(item, attName);
+                        } else if (-1 < configOptions.mgrsNamesUppercase.indexOf(attNamesUpper)) {
+                            mgrs = csvStore.getValue(item, attName);
+                        } else if (-1 < configOptions.distanceNamesUppercase.indexOf(attNamesUpper)) {
+                            distance = csvStore.getValue(item, attName);
+                        } else if (-1 < configOptions.azimuthNamesUppercase.indexOf(attNamesUpper)) {
+                            azimuth = csvStore.getValue(item, attName);
+                        } else if (-1 < configOptions.titleNamesUppercase.indexOf(attNamesUpper)) {
+                            title = csvStore.getValue(item, attName);
+                        } else if (-1 < configOptions.shapeNamesUppercase.indexOf(attNamesUpper)) {
+                            shapeJson = csvStore.getValue(item, attName);
+                        }
+                    }
+                    if (shapeJson) {
+                        addShape(dijit.registry.byId("addShapesTargetLayer").value, esri.geometry.fromJson(JSON.parse(shapeJson)), false, title, azimuth, distance);
+                    } else {
+                        if (!(lon && lat)) {
+                            if (mgrs) {
+                                var latLon = new Array(2);
+                                org.mymanatee.common.usng.USNGtoLL(mgrs, latLon);
+                                if (!isNaN(latLon[0]) && !(isNaN(latLon[1]))) {
+                                    lon = latLon[1];
+                                    lat = latLon[0];
+                                }
+                            }
+                        }
+                        if (lon && lat) {
+                            addPointLatLon(dijit.registry.byId("addShapesTargetLayer").value, lon, lat, false, title, azimuth, distance);
+                        }
+                    }
+                }
+            }});
+        });
+    };
+    fileReader.readAsText(file);
+}
+
 function loadMap(webMapId) {
     //Create the map, based on a Web map
     var mapDeferred = esri.arcgis.utils.createMap(webMapId, "map", {
@@ -177,10 +257,20 @@ function loadMap(webMapId) {
         //Just save the map control as a variable
         map = response.map;
         
+        //Set up CSV drag and drop
+        var mapNode = dojo.byId("map");
+        dojo.connect(mapNode, "dragenter", function (evt) {
+            evt.preventDefault();
+        });
+        dojo.connect(mapNode, "dragover", function (evt) {
+            evt.preventDefault();
+        });
+        dojo.connect(mapNode, "drop", handleDrop);
+        
         drawToolbar = new esri.toolbars.Draw(map);
         dojo.connect(drawToolbar, "onDrawComplete", function (evt) {
             drawToolbar.deactivate();
-            addPoint(dijit.registry.byId("addPointsTargetLayer").value, evt.geographicGeometry.x, evt.geographicGeometry.y, false);
+            addPointLatLon(dijit.registry.byId("addShapesTargetLayer").value, evt.geographicGeometry.x, evt.geographicGeometry.y, false);
         });
         
         var infoTemplateContentDiv = dojo.byId("infoTemplateContent");
@@ -232,7 +322,7 @@ function loadMap(webMapId) {
                         value: layer.id
                     });
                 }
-                registry.byId("addPointsTargetLayer").addOption(layerSelectOptionsList);
+                registry.byId("addShapesTargetLayer").addOption(layerSelectOptionsList);
                 registry.byId("locateEventTargetLayer").addOption(layerSelectOptionsList);
                 registry.byId("rangeRingsTargetLayer").addOption(layerSelectOptionsList);
             });
@@ -296,10 +386,9 @@ function saveWebMap(item, itemData, loggedInUser, callback) {
                 }
             });
             xhrPromise.then(function (data) {
-                console.log("saveWebMap success!");
                 callback(data.id);
             }, function (error) {
-                console.log("saveWebMap error: " + error);
+                console.error("saveWebMap error: " + error);
             }, function (evt) {
                 
             });
@@ -315,28 +404,39 @@ function setVisibility(widgetId, visible) {
     });
 }
 
-function addPoint(layerId, x, y, centerAtPoint) {
+function addPointLatLon(layerId, lon, lat, centerAtPoint, title, azimuth, distance) {
+    var geom = new esri.geometry.Point(lon, lat, new esri.SpatialReference({ wkid: 4326 }));
+    return addShape(layerId, geom, centerAtPoint, title, azimuth, distance);
+}
+    
+function addPointWebMercator(layerId, x, y, centerAtPoint, title, azimuth, distance) {
+    var geom = new esri.geometry.Point(x, y, new esri.SpatialReference({ wkid: 102100 }));
+    return addShape(layerId, geom, centerAtPoint, title, azimuth, distance);
+}
+
+function addShape(layerId, geom, centerAtShape, title, azimuth, distance) {
     var i;
     for (i = 0; i < itemInfo.itemData.operationalLayers.length; i++) {
         if (layerId == itemInfo.itemData.operationalLayers[i].id) {
             var j;
             for (j = 0; j < itemInfo.itemData.operationalLayers[i].featureCollection.layers.length; j++) {
-                if ("esriGeometryPoint" == itemInfo.itemData.operationalLayers[i].featureCollection.layers[j].featureSet.geometryType) {
-                    var point = esri.geometry.geographicToWebMercator(new esri.geometry.Point(x, y));
-                    var sr = point.sr;
+                var layerGeomType = itemInfo.itemData.operationalLayers[i].featureCollection.layers[j].featureSet.geometryType;
+                if (layerGeomType.startsWith("esriGeometry")) {
+                    layerGeomType = layerGeomType.substr("esriGeometry".length);
+                }
+                if (layerGeomType.toLowerCase() == geom.type) {
+                    if (4326 == geom.spatialReference.wkid) {
+                        geom = esri.geometry.geographicToWebMercator(geom);
+                    }
                     var newFeature = {
-                        geometry: {
-                            x: point.x,
-                            y: point.y,
-                            spatialReference: {
-                                wkid: 102100
-                            }
-                        },
+                        geometry: geom.toJson(),
                         attributes: {
                             VISIBLE: true,
-                            TITLE: "New Point",
-                            TYPEID: 1,
-                            OBJECTID: getNextObjectId(itemInfo.itemData.operationalLayers[i].featureCollection.layers[j].featureSet)
+                            TITLE: title ? title : "New " + layerGeomType,
+                            TYPEID: 0,
+                            OBJECTID: getNextObjectId(itemInfo.itemData.operationalLayers[i].featureCollection.layers[j].featureSet),
+                            AZIMUTH: azimuth ? azimuth : undefined,
+                            DISTANCE: distance ? distance : undefined
                         }
                     };
                     itemInfo.itemData.operationalLayers[i].featureCollection.layers[j].featureSet.features.push(newFeature);
@@ -345,8 +445,12 @@ function addPoint(layerId, x, y, centerAtPoint) {
                     var graphic = new esri.Graphic(newFeature);
                     graphicsLayer.add(graphic);
                     
-                    if (centerAtPoint) {
-                        map.centerAt(point);
+                    if (centerAtShape) {
+                        if ("point" == geom.type) {
+                            map.centerAt(geom);
+                        } else {
+                            //TODO center on non-point shape
+                        }
                     }
                     
                     break;

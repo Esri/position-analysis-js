@@ -58,8 +58,8 @@
         
             <!-- Widget for adding new map points, one at a time or in a batch -->
             <div data-dojo-type="dijit/layout/ContentPane" title="Add Features">
-                <label for="addPointsTargetLayer">Add to layer:</label>
-                <select data-dojo-type="dijit/form/Select" id="addPointsTargetLayer" name="addPointsTargetLayer" style="width: 100%"></select>
+                <label for="addShapesTargetLayer">Add to layer:</label>
+                <select data-dojo-type="dijit/form/Select" id="addShapesTargetLayer" name="addShapesTargetLayer" style="width: 100%"></select>
                 &nbsp;<br/>
                 <button type="button" id="btnClickPoints" name="btnClickPoints" data-dojo-type="dijit/form/ToggleButton" data-dojo-props="checked: false">Click Points
                     <script type="dojo/on" data-dojo-event="click" data-dojo-args="evt">
@@ -76,7 +76,7 @@
                             if (addPointsLongitude.validate()) {
                                 var addPointsLatitude = dijit.registry.byId("addPointsLatitude");
                                 if (addPointsLatitude.validate()) {
-                                    addPoint(dijit.registry.byId("addPointsTargetLayer").value, addPointsLongitude.value, addPointsLatitude.value, true);
+                                    addPointLatLon(dijit.registry.byId("addShapesTargetLayer").value, addPointsLongitude.value, addPointsLatitude.value, true);
                                 }
                             }
                         </script>
@@ -89,7 +89,7 @@
                             var latLon = new Array(2);
                             org.mymanatee.common.usng.USNGtoLL(addPointsMGRS.value, latLon);
                             if (!isNaN(latLon[0]) && !(isNaN(latLon[1]))) {
-                                addPoint(dijit.registry.byId("addPointsTargetLayer").value, latLon[1], latLon[0], true);
+                                addPointLatLon(dijit.registry.byId("addShapesTargetLayer").value, latLon[1], latLon[0], true);
                             }
                         </script>
                     </button>
