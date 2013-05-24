@@ -13,7 +13,8 @@ var configOptions = {
     mgrsNamesUppercase: [ "MGRS" ],
     azimuthNamesUppercase: [ "AZIMUTH", "BEARING", "HEADING", "ANGLE" ],
     distanceNamesUppercase: [ "DISTANCE", "DIST" ],
-    titleNamesUppercase: [ "TITLE", "NAME", "LABEL" ]
+    titleNamesUppercase: [ "TITLE", "NAME", "LABEL" ],
+    shapeNamesUppercase: [ "SHAPE", "GEOMETRY", "GEOM" ]
 }
 
 var LAYER_ID_KEY = "layerId";
@@ -194,7 +195,7 @@ function readCsvFile(file) {
                 var itemIndex;
                 for (itemIndex = 0; itemIndex < items.length; itemIndex++) {
                     var item = items[itemIndex];
-                    var lon, lat, mgrs, distance, azimuth, title;
+                    var lon, lat, mgrs, distance, azimuth, title, shapeJson;
                     var attNames = csvStore.getAttributes(item);
                     var attNamesIndex;
                     for (attNamesIndex = 0; attNamesIndex < attNames.length; attNamesIndex++) {
@@ -212,20 +213,26 @@ function readCsvFile(file) {
                             azimuth = csvStore.getValue(item, attName);
                         } else if (-1 < configOptions.titleNamesUppercase.indexOf(attNamesUpper)) {
                             title = csvStore.getValue(item, attName);
+                        } else if (-1 < configOptions.shapeNamesUppercase.indexOf(attNamesUpper)) {
+                            shapeJson = csvStore.getValue(item, attName);
                         }
                     }
-                    if (!(lon && lat)) {
-                        if (mgrs) {
-                            var latLon = new Array(2);
-                            org.mymanatee.common.usng.USNGtoLL(mgrs, latLon);
-                            if (!isNaN(latLon[0]) && !(isNaN(latLon[1]))) {
-                                lon = latLon[1];
-                                lat = latLon[0];
+                    if (shapeJson) {
+                        addShape(dijit.registry.byId("addShapesTargetLayer").value, esri.geometry.fromJson(JSON.parse(shapeJson)), false, title, azimuth, distance);
+                    } else {
+                        if (!(lon && lat)) {
+                            if (mgrs) {
+                                var latLon = new Array(2);
+                                org.mymanatee.common.usng.USNGtoLL(mgrs, latLon);
+                                if (!isNaN(latLon[0]) && !(isNaN(latLon[1]))) {
+                                    lon = latLon[1];
+                                    lat = latLon[0];
+                                }
                             }
                         }
-                    }
-                    if (lon && lat) {
-                        addPoint(dijit.registry.byId("addPointsTargetLayer").value, lon, lat, false, title, azimuth, distance);
+                        if (lon && lat) {
+                            addPointLatLon(dijit.registry.byId("addShapesTargetLayer").value, lon, lat, false, title, azimuth, distance);
+                        }
                     }
                 }
             }});
@@ -263,7 +270,7 @@ function loadMap(webMapId) {
         drawToolbar = new esri.toolbars.Draw(map);
         dojo.connect(drawToolbar, "onDrawComplete", function (evt) {
             drawToolbar.deactivate();
-            addPoint(dijit.registry.byId("addPointsTargetLayer").value, evt.geographicGeometry.x, evt.geographicGeometry.y, false);
+            addPointLatLon(dijit.registry.byId("addShapesTargetLayer").value, evt.geographicGeometry.x, evt.geographicGeometry.y, false);
         });
         
         var infoTemplateContentDiv = dojo.byId("infoTemplateContent");
@@ -315,7 +322,7 @@ function loadMap(webMapId) {
                         value: layer.id
                     });
                 }
-                registry.byId("addPointsTargetLayer").addOption(layerSelectOptionsList);
+                registry.byId("addShapesTargetLayer").addOption(layerSelectOptionsList);
                 registry.byId("locateEventTargetLayer").addOption(layerSelectOptionsList);
                 registry.byId("rangeRingsTargetLayer").addOption(layerSelectOptionsList);
             });
@@ -397,27 +404,36 @@ function setVisibility(widgetId, visible) {
     });
 }
 
-function addPoint(layerId, x, y, centerAtPoint, title, azimuth, distance) {
+function addPointLatLon(layerId, lon, lat, centerAtPoint, title, azimuth, distance) {
+    var geom = new esri.geometry.Point(lon, lat, new esri.SpatialReference({ wkid: 4326 }));
+    return addShape(layerId, geom, centerAtPoint, title, azimuth, distance);
+}
+    
+function addPointWebMercator(layerId, x, y, centerAtPoint, title, azimuth, distance) {
+    var geom = new esri.geometry.Point(x, y, new esri.SpatialReference({ wkid: 102100 }));
+    return addShape(layerId, geom, centerAtPoint, title, azimuth, distance);
+}
+
+function addShape(layerId, geom, centerAtShape, title, azimuth, distance) {
     var i;
     for (i = 0; i < itemInfo.itemData.operationalLayers.length; i++) {
         if (layerId == itemInfo.itemData.operationalLayers[i].id) {
             var j;
             for (j = 0; j < itemInfo.itemData.operationalLayers[i].featureCollection.layers.length; j++) {
-                if ("esriGeometryPoint" == itemInfo.itemData.operationalLayers[i].featureCollection.layers[j].featureSet.geometryType) {
-                    var point = esri.geometry.geographicToWebMercator(new esri.geometry.Point(x, y));
-                    var sr = point.sr;
+                var layerGeomType = itemInfo.itemData.operationalLayers[i].featureCollection.layers[j].featureSet.geometryType;
+                if (layerGeomType.startsWith("esriGeometry")) {
+                    layerGeomType = layerGeomType.substr("esriGeometry".length);
+                }
+                if (layerGeomType.toLowerCase() == geom.type) {
+                    if (4326 == geom.spatialReference.wkid) {
+                        geom = esri.geometry.geographicToWebMercator(geom);
+                    }
                     var newFeature = {
-                        geometry: {
-                            x: point.x,
-                            y: point.y,
-                            spatialReference: {
-                                wkid: 102100
-                            }
-                        },
+                        geometry: geom.toJson(),
                         attributes: {
                             VISIBLE: true,
-                            TITLE: title ? title : "New Point",
-                            TYPEID: 1,
+                            TITLE: title ? title : "New " + layerGeomType,
+                            TYPEID: 0,
                             OBJECTID: getNextObjectId(itemInfo.itemData.operationalLayers[i].featureCollection.layers[j].featureSet),
                             AZIMUTH: azimuth ? azimuth : undefined,
                             DISTANCE: distance ? distance : undefined
@@ -429,8 +445,12 @@ function addPoint(layerId, x, y, centerAtPoint, title, azimuth, distance) {
                     var graphic = new esri.Graphic(newFeature);
                     graphicsLayer.add(graphic);
                     
-                    if (centerAtPoint) {
-                        map.centerAt(point);
+                    if (centerAtShape) {
+                        if ("point" == geom.type) {
+                            map.centerAt(geom);
+                        } else {
+                            //TODO center on non-point shape
+                        }
                     }
                     
                     break;
