@@ -8,18 +8,20 @@ Position Analysis Web template
 The Position Analysis Web template uses Portal for ArcGIS 10.2+ or ArcGIS Online. You'll need the portal URL
 in order to set up the application.
 
-You must deploy the Web application on a HTTPS-enabled Web server, or else the login to Portal or ArcGIS Online
-will not work.
+You must deploy the Web application on a HTTPS-enabled Web server, or else the login to Portal or ArcGIS 
+Online will not work.
 
 If using [the ArcGIS proxy page](http://developers.arcgis.com/en/javascript/jshelp/ags_proxy.html),
-and if the Portal certificate is self-signed or issued by a non-standard certificate authority (CA), you have to configure
-the Web server that is hosting the proxy page to trust the certificate and/or CA. The directions for this vary based on which
-proxy page you choose--ASP.NET, Java, or PHP. (For example, for the Java proxy page, you must use the JDK's keytool to add the
-CA root certificate to the trust store of the JRE that runs your Web server.) Directions are available on the Web for various
-platforms and Web servers.
+and if the Portal certificate is self-signed or issued by a non-standard certificate authority (CA), you
+have to configure the Web server that is hosting the proxy page to trust the certificate and/or CA. The
+directions for this vary based on which proxy page you choose--ASP.NET, Java, or PHP. (For example, for
+the Java proxy page, you must use the JDK's keytool to add the CA root certificate to the trust store of
+the JRE that runs your Web server.) Directions are available on the Web for various platforms and Web
+servers.
 
-Deploy the [site](site) directory as a Web application in your HTTPS-enabled Web server with a context name of your choice.
-Open [site/js/pos-analysis.js](site/js/pos-analysis.js) in a text editor and edit the variables at the top of the file as necessary:
+Deploy the [site](site) directory as a Web application in your HTTPS-enabled Web server with a context
+name of your choice. Open [site/js/pos-analysis.js](site/js/pos-analysis.js) in a text editor and edit the
+variables at the top of the file as necessary:
 
 - webmapTitle: the title of the expected Web map. If the user does not own a Web map with that title,
                a Web map with that title will be created.
@@ -32,13 +34,37 @@ Open [site/js/pos-analysis.js](site/js/pos-analysis.js) in a text editor and edi
                  [the proxy page documentation](http://developers.arcgis.com/en/javascript/jshelp/ags_proxy.html)
                  for further details.
 - proxyUrl: the relative or absolute URL to the proxy page.
+- longitudeNamesUppercase: uppercase form of CSV column names that will be treated as the longitude field
+                           when uploading a CSV. Though the field names must be in uppercase in this file,
+                           the field names in the CSV may be in any case.
+- latitudeNamesUppercase: uppercase form of CSV column names that will be treated as the latitude field
+                          when uploading a CSV. Though the field names must be in uppercase in this file,
+                          the field names in the CSV may be in any case.
+- mgrsNamesUppercase: uppercase form of CSV column names that will be treated as the MGRS field
+                      when uploading a CSV. Though the field names must be in uppercase in this file,
+                      the field names in the CSV may be in any case.
+- azimuthNamesUppercase: uppercase form of CSV column names that will be treated as the azimuth field
+                         when uploading a CSV. Though the field names must be in uppercase in this file,
+                         the field names in the CSV may be in any case.
+- distanceNamesUppercase: uppercase form of CSV column names that will be treated as the distance field
+                          when uploading a CSV. Though the field names must be in uppercase in this file,
+                          the field names in the CSV may be in any case.
+- titleNamesUppercase: uppercase form of CSV column names that will be treated as the title field
+                       when uploading a CSV. Though the field names must be in uppercase in this file,
+                       the field names in the CSV may be in any case.
+- shapeNamesUppercase: uppercase form of CSV column names that will be treated as the shape field
+                       when uploading a CSV. Though the field names must be in uppercase in this file,
+                       the field names in the CSV may be in any case. The shape string should have the
+                       format of a JSON point, polyline, or polygon string as specified in [the ArcGIS
+                       REST API](http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Geometry_Objects/02r3000000n1000000/).
 
-Open index.html and edit the ArcGIS API for JavaScript URLs, including the JavaScript link and the CSS links. If using
-Portal for ArcGIS, you should use the ArcGIS API for JavaScript included with the portal.
+
+Open index.html and edit the ArcGIS API for JavaScript URLs, including the JavaScript link and the CSS
+links. If using Portal for ArcGIS, you should use the ArcGIS API for JavaScript included with the portal.
 
 ## Licensing
 
-Copyright 2012 Esri
+Copyright 2013 Esri
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
