@@ -34,6 +34,30 @@ variables at the top of the file as necessary:
                  [the proxy page documentation](http://developers.arcgis.com/en/javascript/jshelp/ags_proxy.html)
                  for further details.
 - proxyUrl: the relative or absolute URL to the proxy page.
+- longitudeNamesUppercase: uppercase form of CSV column names that will be treated as the longitude field
+                           when uploading a CSV. Though the field names must be in uppercase in this file,
+                           the field names in the CSV may be in any case.
+- latitudeNamesUppercase: uppercase form of CSV column names that will be treated as the latitude field
+                          when uploading a CSV. Though the field names must be in uppercase in this file,
+                          the field names in the CSV may be in any case.
+- mgrsNamesUppercase: uppercase form of CSV column names that will be treated as the MGRS field
+                      when uploading a CSV. Though the field names must be in uppercase in this file,
+                      the field names in the CSV may be in any case.
+- azimuthNamesUppercase: uppercase form of CSV column names that will be treated as the azimuth field
+                         when uploading a CSV. Though the field names must be in uppercase in this file,
+                         the field names in the CSV may be in any case.
+- distanceNamesUppercase: uppercase form of CSV column names that will be treated as the distance field
+                          when uploading a CSV. Though the field names must be in uppercase in this file,
+                          the field names in the CSV may be in any case.
+- titleNamesUppercase: uppercase form of CSV column names that will be treated as the title field
+                       when uploading a CSV. Though the field names must be in uppercase in this file,
+                       the field names in the CSV may be in any case.
+- shapeNamesUppercase: uppercase form of CSV column names that will be treated as the shape field
+                       when uploading a CSV. Though the field names must be in uppercase in this file,
+                       the field names in the CSV may be in any case. The shape string should have the
+                       format of a JSON point, polyline, or polygon string as specified in [the ArcGIS
+                       REST API](http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Geometry_Objects/02r3000000n1000000/).
+
 
 Open index.html and edit the ArcGIS API for JavaScript URLs, including the JavaScript link and the CSS
 links. If using Portal for ArcGIS, you should use the ArcGIS API for JavaScript included with the portal.
