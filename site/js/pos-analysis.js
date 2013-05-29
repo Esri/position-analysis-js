@@ -8,6 +8,10 @@ var configOptions = {
     sharingPath: "/sharing/content/items",
     proxyRequired: true,
     proxyUrl: "/proxy.jsp",
+    locateEventUrl: "https://www.realhoneybadgers.com/arcgis/rest/services/Plans/LocateEvent/GPServer/Locate%20Event",
+    locateEventInputParameterName: "Observer_locations__bearing_and_distance_estimates_",
+    locateEventOutputLinesParameterName: "Observation_lines",
+    locateEventOutputAreaParameterName: "Estimated_area",
     longitudeNamesUppercase: [ "LON", "LONG", "LONGITUDE", "X" ],
     latitudeNamesUppercase: [ "LAT", "LATITUDE", "Y" ],
     mgrsNamesUppercase: [ "MGRS" ],
@@ -18,12 +22,14 @@ var configOptions = {
 }
 
 var LAYER_ID_KEY = "layerId";
+var LOCATE_EVENT_LOCATING_MESSAGE = "Locating event <img border='0' cellpadding='0' cellspacing='0' src='img/ajax-loader.gif' />";
 
 var map;
 var portal;
 var itemInfo;
 var user;
 var drawToolbar;
+var gpLocateEvent;
 
 require([
     "dijit/layout/BorderContainer",
@@ -45,10 +51,11 @@ require([
     "esri/arcgis/Portal",
     "esri/arcgis/utils",
     "esri/toolbars/draw",
+    "esri/tasks/Geoprocessor",
     "dojo/on",
     "dojo/json",
     "dojo/domReady!"],
-function (BorderContainer, ContentPane, AccordionContainer, ToggleButton, Uploader, Flash, NumberTextBox, CheckBox, Select, InlineEditBox, NumberSpinner, Menu, MenuItem, Map, ArcGISTiledMapServiceLayer, IdentityManager, Portal, utils, Draw, on, JSON) {
+function (BorderContainer, ContentPane, AccordionContainer, ToggleButton, Uploader, Flash, NumberTextBox, CheckBox, Select, InlineEditBox, NumberSpinner, Menu, MenuItem, Map, ArcGISTiledMapServiceLayer, IdentityManager, Portal, utils, Draw, Geoprocessor, on, JSON) {
     console.log("Welcome to Position Analysis Web, using Dojo version " + dojo.version);
     
     esri.arcgis.utils.arcgisUrl = configOptions.portalUrl + configOptions.sharingPath;
@@ -70,6 +77,9 @@ function (BorderContainer, ContentPane, AccordionContainer, ToggleButton, Upload
             }
         }
     }, "addShapesUploader");
+    
+    gpLocateEvent = new Geoprocessor(configOptions.locateEventUrl);
+    gpLocateEvent.setOutputSpatialReference({ wkid: 102100 });
     
     dojo.ready(function() {
         setVisibility("buttonSaveMap", false);
@@ -471,4 +481,96 @@ function getNextObjectId(featureSet) {
         }
     }
     return maxObjectId + 1;
+}
+
+function locateEvent() {
+    dojo.byId("locateEventStatus").innerHTML = LOCATE_EVENT_LOCATING_MESSAGE;
+    require(["esri/tasks/FeatureSet", "esri/graphic", "esri/symbols/SimpleMarkerSymbol", "dijit/registry"], function (FeatureSet, Graphic, SimpleMarkerSymbol, registry) {
+        var targetLayerName = registry.byId("locateEventTargetLayer").value;
+        var webMapFeatureSet;
+        var pointGraphicsLayerId, lineGraphicsLayerId, areaGraphicsLayerId;
+        var opLayers = this.itemInfo.itemData.operationalLayers;
+        var i;
+        for (i = 0; i < opLayers.length; i++) {
+            if (opLayers[i].id == targetLayerName) {
+                //Get points sublayer
+                var sublayers = opLayers[i].featureCollection.layers;
+                var j;
+                for (j = 0; j < sublayers.length; j++) {
+                    if (!pointGraphicsLayerId && "esriGeometryPoint" == sublayers[j].layerDefinition.geometryType) {
+                        webMapFeatureSet = sublayers[j].featureSet;
+                        pointGraphicsLayerId = sublayers[j].id;
+                    } else if (!lineGraphicsLayerId && "esriGeometryPolyline" == sublayers[j].layerDefinition.geometryType) {
+                        lineGraphicsLayerId = sublayers[j].id;
+                    } else if (!areaGraphicsLayerId && "esriGeometryPolygon" == sublayers[j].layerDefinition.geometryType) {
+                        areaGraphicsLayerId = sublayers[j].id;
+                    }
+                }
+                break;
+            }
+        }
+        if (webMapFeatureSet) {
+            var featureSet = new FeatureSet();
+            featureSet.features = [];
+            for (var featureIndex = 0; featureIndex < webMapFeatureSet.features.length; featureIndex++) {
+                var graphic = new Graphic(webMapFeatureSet.features[featureIndex]);
+                featureSet.features.push(graphic);
+            }
+            var params = {};
+            params[configOptions.locateEventInputParameterName] = featureSet;
+            gpLocateEvent.submitJob(params, function (jobInfo) {
+                if ("esriJobFailed" == jobInfo.jobStatus) {
+                    locateEventStatusElement.innerHTML = "Could not locate";
+                } else {
+                    gpLocateEvent.getResultData(jobInfo.jobId, configOptions.locateEventOutputLinesParameterName, locateEventHandleLines, locateEventHandleLinesError);
+                    gpLocateEvent.getResultData(jobInfo.jobId, configOptions.locateEventOutputAreaParameterName/*, locateEventHandleAreas, locateEventHandleAreasError*/)
+                    .then(function (resultData) {
+                        locateEventHandleAreas(resultData, areaGraphicsLayerId);
+                    });
+                }
+            }, locateEventStatus);
+        } else {
+            locateEventStatusElement.innerHTML = "Could not locate";
+        }
+    });
+}
+
+function locateEventStatus(jobInfo) {
+    var locateEventStatusElement = dojo.byId("locateEventStatus");
+    switch (jobInfo.jobStatus) {
+        case "esriJobExecuting": {
+            locateEventStatusElement.innerHTML = LOCATE_EVENT_LOCATING_MESSAGE;
+            break;
+        }
+        
+        case "esriJobFailed": {
+            locateEventStatusElement.innerHTML = "Could not locate";
+            break;
+        }
+        
+        case "esriJobSucceeded": {
+            locateEventStatusElement.innerHTML = "Located event";
+            break;
+        }
+    }
+}
+
+function locateEventHandleLines(result) {
+    console.log("locateEventHandleLines");
+}
+
+function locateEventHandleLinesError(error) {
+    console.error("locateEventHandleLinesError");
+}
+
+function locateEventHandleAreas(resultData, areaGraphicsLayerId) {
+    var graphicsLayer = map.getLayer(areaGraphicsLayerId);
+    var features = resultData.value.features;
+    for (var featureIndex = 0; featureIndex < features.length; featureIndex++) {
+        var feature = features[featureIndex];
+        feature.attributes["TYPEID"] = 0;
+        graphicsLayer.add(feature);
+    }
+    
+    //TODO add to Web map
 }

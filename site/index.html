@@ -105,9 +105,12 @@
                 <label for="locateEventTargetLayer">Observations layer:</label>
                 <select data-dojo-type="dijit/form/Select" id="locateEventTargetLayer" name="locateEventTargetLayer" style="width: 100%"></select>
                 <p><i>Be sure to set azimuth and distance for each point before running Locate!</i></p>
-                <button type="button" data-dojo-type="dijit/form/Button">
-                    Locate
+                <button type="button" data-dojo-type="dijit/form/Button">Locate
+                    <script type="dojo/on" data-dojo-event="click" data-dojo-args="evt">
+                        locateEvent();
+                    </script>
                 </button>
+                <p id="locateEventStatus"></p>
             </div>
             
             <!-- Range rings widget -->
