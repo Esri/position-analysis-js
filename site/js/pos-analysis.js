@@ -522,7 +522,10 @@ function locateEvent() {
                 if ("esriJobFailed" == jobInfo.jobStatus) {
                     locateEventStatusElement.innerHTML = "Could not locate";
                 } else {
-                    gpLocateEvent.getResultData(jobInfo.jobId, configOptions.locateEventOutputLinesParameterName, locateEventHandleLines, locateEventHandleLinesError);
+                    gpLocateEvent.getResultData(jobInfo.jobId, configOptions.locateEventOutputLinesParameterName/*, locateEventHandleLines, locateEventHandleLinesError*/)
+                    .then(function (resultData) {
+                        locateEventHandleLines(resultData, lineGraphicsLayerId);
+                    });
                     gpLocateEvent.getResultData(jobInfo.jobId, configOptions.locateEventOutputAreaParameterName/*, locateEventHandleAreas, locateEventHandleAreasError*/)
                     .then(function (resultData) {
                         locateEventHandleAreas(resultData, areaGraphicsLayerId);
@@ -555,12 +558,16 @@ function locateEventStatus(jobInfo) {
     }
 }
 
-function locateEventHandleLines(result) {
-    console.log("locateEventHandleLines");
-}
-
-function locateEventHandleLinesError(error) {
-    console.error("locateEventHandleLinesError");
+function locateEventHandleLines(resultData, lineGraphicsLayerId) {
+    var graphicsLayer = map.getLayer(lineGraphicsLayerId);
+    var features = resultData.value.features;
+    for (var featureIndex = 0; featureIndex < features.length; featureIndex++) {
+        var feature = features[featureIndex];
+        feature.attributes["TYPEID"] = 0;
+        graphicsLayer.add(feature);
+    }
+    
+    //TODO add to Web map
 }
 
 function locateEventHandleAreas(resultData, areaGraphicsLayerId) {
