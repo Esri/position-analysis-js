@@ -398,11 +398,10 @@ function saveWebMap(item, itemData, loggedInUser, callback) {
                 }
             });
             xhrPromise.then(function (data) {
-                callback(data.id);
+                //TODO notify the user that it worked
             }, function (error) {
                 console.error("saveWebMap error: " + error);
-            }, function (evt) {
-                
+                //TODO notify the user that it didn't work
             });
         } catch (ex) {
             console.error("saveWebMap xhr error: " + ex);
@@ -488,22 +487,22 @@ function locateEvent() {
     require(["esri/tasks/FeatureSet", "esri/graphic", "esri/symbols/SimpleMarkerSymbol", "dijit/registry"], function (FeatureSet, Graphic, SimpleMarkerSymbol, registry) {
         var targetLayerName = registry.byId("locateEventTargetLayer").value;
         var webMapFeatureSet;
-        var pointGraphicsLayerId, lineGraphicsLayerId, areaGraphicsLayerId;
+        var pointGraphicsLayer, lineGraphicsLayer, areaGraphicsLayer;
         var opLayers = this.itemInfo.itemData.operationalLayers;
         var i;
         for (i = 0; i < opLayers.length; i++) {
             if (opLayers[i].id == targetLayerName) {
-                //Get points sublayer
+                //Get sublayers
                 var sublayers = opLayers[i].featureCollection.layers;
                 var j;
                 for (j = 0; j < sublayers.length; j++) {
-                    if (!pointGraphicsLayerId && "esriGeometryPoint" == sublayers[j].layerDefinition.geometryType) {
+                    if (!pointGraphicsLayer && "esriGeometryPoint" == sublayers[j].layerDefinition.geometryType) {
                         webMapFeatureSet = sublayers[j].featureSet;
-                        pointGraphicsLayerId = sublayers[j].id;
-                    } else if (!lineGraphicsLayerId && "esriGeometryPolyline" == sublayers[j].layerDefinition.geometryType) {
-                        lineGraphicsLayerId = sublayers[j].id;
-                    } else if (!areaGraphicsLayerId && "esriGeometryPolygon" == sublayers[j].layerDefinition.geometryType) {
-                        areaGraphicsLayerId = sublayers[j].id;
+                        pointGraphicsLayer = sublayers[j];
+                    } else if (!lineGraphicsLayer && "esriGeometryPolyline" == sublayers[j].layerDefinition.geometryType) {
+                        lineGraphicsLayer = sublayers[j];
+                    } else if (!areaGraphicsLayer && "esriGeometryPolygon" == sublayers[j].layerDefinition.geometryType) {
+                        areaGraphicsLayer = sublayers[j];
                     }
                 }
                 break;
@@ -524,11 +523,11 @@ function locateEvent() {
                 } else {
                     gpLocateEvent.getResultData(jobInfo.jobId, configOptions.locateEventOutputLinesParameterName/*, locateEventHandleLines, locateEventHandleLinesError*/)
                     .then(function (resultData) {
-                        locateEventHandleLines(resultData, lineGraphicsLayerId);
+                        locateEventHandleLines(resultData, lineGraphicsLayer);
                     });
                     gpLocateEvent.getResultData(jobInfo.jobId, configOptions.locateEventOutputAreaParameterName/*, locateEventHandleAreas, locateEventHandleAreasError*/)
                     .then(function (resultData) {
-                        locateEventHandleAreas(resultData, areaGraphicsLayerId);
+                        locateEventHandleAreas(resultData, areaGraphicsLayer);
                     });
                 }
             }, locateEventStatus);
@@ -558,26 +557,28 @@ function locateEventStatus(jobInfo) {
     }
 }
 
-function locateEventHandleLines(resultData, lineGraphicsLayerId) {
-    var graphicsLayer = map.getLayer(lineGraphicsLayerId);
+function locateEventHandleLines(resultData, lineGraphicsLayer) {
+    var graphicsLayer = map.getLayer(lineGraphicsLayer.id);
     var features = resultData.value.features;
     for (var featureIndex = 0; featureIndex < features.length; featureIndex++) {
         var feature = features[featureIndex];
         feature.attributes["TYPEID"] = 0;
+        feature.attributes["OBJECTID"] = getNextObjectId(lineGraphicsLayer.featureSet);
         graphicsLayer.add(feature);
+        var featureJson = feature.toJson();
+        lineGraphicsLayer.featureSet.features.push(featureJson);
     }
-    
-    //TODO add to Web map
 }
 
-function locateEventHandleAreas(resultData, areaGraphicsLayerId) {
-    var graphicsLayer = map.getLayer(areaGraphicsLayerId);
+function locateEventHandleAreas(resultData, areaGraphicsLayer) {
+    var graphicsLayer = map.getLayer(areaGraphicsLayer.id);
     var features = resultData.value.features;
     for (var featureIndex = 0; featureIndex < features.length; featureIndex++) {
         var feature = features[featureIndex];
         feature.attributes["TYPEID"] = 0;
+        feature.attributes["OBJECTID"] = getNextObjectId(areaGraphicsLayer.featureSet);
         graphicsLayer.add(feature);
+        var featureJson = feature.toJson();
+        areaGraphicsLayer.featureSet.features.push(featureJson);
     }
-    
-    //TODO add to Web map
 }
