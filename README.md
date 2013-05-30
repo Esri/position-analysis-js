@@ -34,6 +34,10 @@ variables at the top of the file as necessary:
                  [the proxy page documentation](http://developers.arcgis.com/en/javascript/jshelp/ags_proxy.html)
                  for further details.
 - proxyUrl: the relative or absolute URL to the proxy page.
+- locateEventUrl: the URL of the geoprocessing task used by the Locate Event tool.
+- locateEventInputParameterName: the feature set input parameter name for the geoprocessing task.
+- locateEventOutputLinesParameterName: the name of the lines output parameter for the geoprocessing task.
+- locateEventOutputAreaParameterName: the name of the area (polygon) output parameter for the geoprocessing task.
 - longitudeNamesUppercase: uppercase form of CSV column names that will be treated as the longitude field
                            when uploading a CSV. Though the field names must be in uppercase in this file,
                            the field names in the CSV may be in any case.
