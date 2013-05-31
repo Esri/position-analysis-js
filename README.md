@@ -19,6 +19,12 @@ the Java proxy page, you must use the JDK's keytool to add the CA root certifica
 the JRE that runs your Web server.) Directions are available on the Web for various platforms and Web
 servers.
 
+You need to publish the Locate Event model from the [Position Analysis Tools toolbox
+](https://github.com/Esri/defense-and-intel-analysis-toolbox/blob/master/toolboxes/Position%20Analysis%20Tools.tbx)
+as a geoprocessing service in ArcGIS 10.1 (or later) for Server. The model requires no data, so simply run
+it in ArcMap and publish the result. You'll use the URL of the Locate Event task as the locateEventUrl
+configuration variable mentioned below.
+
 Deploy the [site](site) directory as a Web application in your HTTPS-enabled Web server with a context
 name of your choice. Open [site/js/pos-analysis.js](site/js/pos-analysis.js) in a text editor and edit the
 variables at the top of the file as necessary:
@@ -65,6 +71,57 @@ variables at the top of the file as necessary:
 
 Open index.html and edit the ArcGIS API for JavaScript URLs, including the JavaScript link and the CSS
 links. If using Portal for ArcGIS, you should use the ArcGIS API for JavaScript included with the portal.
+
+## Usage
+
+Navigate to the application in a Web browser. In the Settings tab, login to Portal for ArcGIS. When the map
+appears, you can use all the application's tools in the following tabs:
+
+### Add Features
+
+Add to layer: the layer to which new features will be added.
+
+Click Points: press this button, then click the map to add a new point to the layer.
+
+Add point by coordinates: type a longitude and latitude, or an MGRS string, then click Add Point to add a
+new point to the layer.
+
+Select Files: choose a CSV file containing features to add to the map. Alternatively, you can drag and
+drop a CSV onto the map.
+The CSV should have column headers. See the configuration variables above for specifying which column
+names the application
+will recognize. In general, here are the columns used by the application (the names are specified using
+the configuration variables):
+
+- Name
+- Latitude
+- Longitude
+- MGRS
+- Geometry (specified as a JSON point, polyline, or polygon string as specified in [the ArcGIS REST API
+           ](http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Geometry_Objects/02r3000000n1000000/)
+- Azimuth (in degrees)
+- Distance (in meters)
+           
+### Locate Event
+
+Choose a layer containing three or more points to be used as observations for locating an observed event.
+Each observation should have an azimuth and a distance. Then click Locate. The geoprocessing service is
+called, and the estimated area of the event appears on the map, along with the observation lines calculated
+from each point's azimuth and distance.
+
+### Calculate Range Rings
+
+TODO not yet implemented
+
+### Settings
+
+Use the Settings tab to login to Portal for ArcGIS before using the rest of the application.
+
+Click Save Map to save the feature layers. These layers are stored in a Web map.
+
+### Manage Layers
+
+Check the checkboxes to change layers' visibility. Click a layer name to rename that layer.
 
 ## Licensing
 
