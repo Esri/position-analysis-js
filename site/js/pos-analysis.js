@@ -8,7 +8,7 @@ var configOptions = {
     sharingPath: "/sharing/content/items",
     proxyRequired: true,
     proxyUrl: "/proxy.jsp",
-    locateEventUrl: "https://afmcomstaging.esri.com/arcgis/rest/services/Operations/PositionAnalysis/GPServer/Locate%20Event",
+    locateEventUrl: "https://afmcomstaging.esri.com/arcgis/rest/services/Operations/PositionAnalysis/GPServer/LocateEvent",
     locateEventInputParameterName: "Observer_locations__bearing_and_distance_estimates_",
     locateEventOutputLinesParameterName: "Observation_lines",
     locateEventOutputAreaParameterName: "Estimated_area",
