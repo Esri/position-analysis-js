@@ -30,6 +30,8 @@ var itemInfo;
 var user;
 var drawToolbar;
 var gpLocateEvent;
+var connectedLayers = [];
+var addedGraphics = [];
 
 require([
     "dijit/layout/BorderContainer",
@@ -454,7 +456,7 @@ function addShape(layerId, geom, centerAtShape, title, azimuth, distance) {
                     
                     var graphicsLayer = map.getLayer(itemInfo.itemData.operationalLayers[i].featureCollection.layers[j].id);
                     var graphic = new esri.Graphic(newFeature);
-                    graphicsLayer.add(graphic);
+                    addGraphic(graphicsLayer, graphic);
                     
                     if (centerAtShape) {
                         if ("point" == geom.type) {
@@ -564,7 +566,7 @@ function locateEventHandleLines(resultData, lineGraphicsLayer) {
         var feature = features[featureIndex];
         feature.attributes["TYPEID"] = 0;
         feature.attributes["OBJECTID"] = getNextObjectId(lineGraphicsLayer.featureSet);
-        graphicsLayer.add(feature);
+        addGraphic(graphicsLayer, feature);
         var featureJson = feature.toJson();
         lineGraphicsLayer.featureSet.features.push(featureJson);
     }
@@ -577,8 +579,30 @@ function locateEventHandleAreas(resultData, areaGraphicsLayer) {
         var feature = features[featureIndex];
         feature.attributes["TYPEID"] = 0;
         feature.attributes["OBJECTID"] = getNextObjectId(areaGraphicsLayer.featureSet);
-        graphicsLayer.add(feature);
+        addGraphic(graphicsLayer, feature);
         var featureJson = feature.toJson();
         areaGraphicsLayer.featureSet.features.push(featureJson);
     }
+}
+
+function listenForRemovedGraphics(graphicsLayer) {
+    //Connect to graphic-remove, to work around new graphics getting removed
+    if (-1 == connectedLayers.indexOf(graphicsLayer.id)) {
+        connectedLayers.push(graphicsLayer.id);
+        require(["dojo/on"], function (on) {
+            on(graphicsLayer, "graphic-remove", function (arg) {
+                var graphic = arg.graphic;
+                var layer = arg.target;
+                if (-1 < addedGraphics.indexOf(graphic)) {
+                    layer.add(graphic);
+                }
+            });
+        });
+    }
+}
+
+function addGraphic(graphicsLayer, graphic) {
+    listenForRemovedGraphics(graphicsLayer);
+    graphicsLayer.add(graphic);
+    addedGraphics.push(graphic);
 }
