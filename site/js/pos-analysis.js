@@ -89,7 +89,10 @@ function (BorderContainer, ContentPane, AccordionContainer, ToggleButton, Upload
 });
 
 function login() {
+    var settingsStatusElement = dojo.byId("settingsStatus");
+    settingsStatusElement.innerHTML = "Logging in...";
     portal.signIn().then(function (loggedInUser) {
+        settingsStatusElement.innerHTML = "Searching for " + configOptions.webmapTitle + "...";
         user = loggedInUser;
         var queryParams = {
             q: 'owner:"' + loggedInUser.username + '" AND title:"' + configOptions.webmapTitle + '" AND type:"Web Map"'
@@ -97,11 +100,14 @@ function login() {
         portal.queryItems(queryParams).then(function (queryResult) {
             require(["dojo/request/xhr"], function (xhr) {
                 if (0 == queryResult.total) {
+                    var defaultWebMapJsonUrl = "defaultWebMapItemData.json";
+                    settingsStatusElement.innerHTML = "Reading default Web map...";
                     //Read defaultWebMapItemData.json and create from that, or ask the user to choose a Web map to use.
-                    var xhrPromise = xhr("defaultWebMapItemData.jsonn", {
+                    var xhrPromise = xhr(defaultWebMapJsonUrl, {
                         handleAs: "json"
                     });
                     xhrPromise.then(function (itemData) {
+                        settingsStatusElement.innerHTML = "Read default Web map; saving to Portal...";
                         var item = {
                             itemType: "text",
                             owner: loggedInUser.username,
@@ -116,6 +122,10 @@ function login() {
                         });
                     }, function (error) {
                         console.error("Couldn't get default Web map: " + error);
+                        settingsStatusElement.innerHTML = "Sorry, but we couldn't load the default Web map at "
+                            + defaultWebMapJsonUrl + ", and you don't have a Web map called \"" + configOptions.webmapTitle
+                            + "\".<br/><br/>You can try going to <a target='_blank' href='" + configOptions.portalUrl
+                            + "'>Portal for ArcGIS</a> and creating a Web map called \"" + configOptions.webmapTitle + "\".";
                     });
                 } else {
                     loadMap(queryResult.results[0].id);
@@ -123,9 +133,15 @@ function login() {
             });
         });    
     }, function (error) {
-        console.error("Couldn't sign in: " + error);
-        //TODO this isn't a bad username/password. It's more fundamental than that, like a bad
-        //     portal URL or even a bad portal. Tell the user.
+        if ("ABORTED" == error.message) {
+            //It's okay; the user cancelled the login
+            settingsStatusElement.innerHTML = "";
+        } else {
+            console.error("Couldn't sign in: " + error);
+            //This isn't a bad username/password. It's more fundamental than that, like a bad
+            //portal URL or even a bad portal. Tell the user.
+            settingsStatusElement.innerHTML = error.message;
+        }
     });
 }
 
@@ -251,6 +267,8 @@ function readCsvFile(file) {
 }
 
 function loadMap(webMapId) {
+    var settingsStatusElement = dojo.byId("settingsStatus");
+    settingsStatusElement.innerHTML = "Loading Web map...";
     //Create the map, based on a Web map
     var mapDeferred = esri.arcgis.utils.createMap(webMapId, "map", {
         mapOptions: {
@@ -338,9 +356,12 @@ function loadMap(webMapId) {
         }
         
         setVisibility("buttonSaveMap", true);
+        settingsStatusElement.innerHTML = "";
     }, function(error){
         console.error('Create Map Failed: ' , dojo.toJson(error));
-        //TODO this might be a bad item ID or something else. Tell the user.
+        //This might be a bad item ID or something else. Tell the user.
+        settingsStatusElement.innerHTML = "Sorry, we found the Web map but couldn't load it.<br/><br/>"
+            + "Details: " + error;
     });
 }
 
@@ -352,6 +373,8 @@ function saveMap() {
  * The "callback" paramater is an optional callback function that takes the Web map ID as a parameter.
  */
 function saveWebMap(item, itemData, loggedInUser, callback) {
+    var settingsStatusElement = dojo.byId("settingsStatus");
+    
     //Remove the "layerObject" objects from itemData; they cause trouble and are superfluous
     var opLayerIndex;
     for (opLayerIndex = 0; opLayerIndex < itemData.operationalLayers.length; opLayerIndex++) {
@@ -385,24 +408,26 @@ function saveWebMap(item, itemData, loggedInUser, callback) {
         console.error("Error: " + ex);
     }
     require(["dojo/request/xhr"], function (xhr) {
-        try {
-            var xhrPromise = xhr(loggedInUser.userContentUrl.replace("/sharing/rest/content/users/", "/sharing/content/users/") + "/addItem?f=json&token=" + loggedInUser.credential.token, {
-                handleAs: "json",
-                method: "POST",
-                data: cont,
-                headers: {
-                    "X-Requested-With": null
-                }
-            });
-            xhrPromise.then(function (data) {
-                //TODO notify the user that it worked
-            }, function (error) {
-                console.error("saveWebMap error: " + error);
-                //TODO notify the user that it didn't work
-            });
-        } catch (ex) {
-            console.error("saveWebMap xhr error: " + ex);
-        }
+        var xhrPromise = xhr(loggedInUser.userContentUrl.replace("/sharing/rest/content/users/", "/sharing/content/users/") + "/addItem?f=json&token=" + loggedInUser.credential.token, {
+            handleAs: "json",
+            method: "POST",
+            data: cont,
+            headers: {
+                "X-Requested-With": null
+            }
+        });
+        xhrPromise.then(function (data) {
+            //Notify the user that it worked
+            settingsStatusElement.innerHTML = "";
+            if (callback) {
+                callback(data.id);
+            }
+        }, function (error) {
+            console.error("saveWebMap error: " + error);
+            //Notify the user that it didn't work
+            settingsStatusElement.innerHTML = "Sorry, saving the Web map did not work.<br/><br/>"
+                + "Details: " + error;
+        });
     });
 }
 
