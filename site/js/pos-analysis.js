@@ -8,7 +8,7 @@ var configOptions = {
     sharingPath: "/sharing/content/items",
     proxyRequired: true,
     proxyUrl: "/proxy.jsp",
-    locateEventUrl: "https://afmcomstaging.esri.com/arcgis/rest/services/Operations/PositionAnalysis/GPServer/LocateEvent",
+    locateEventUrl: "https://afmcomstaging.esri.com/arcgis/rest/services/Tasks/PositionAnalysis/GPServer/LocateEvent",
     locateEventInputParameterName: "Observer_locations__bearing_and_distance_estimates_",
     locateEventOutputLinesParameterName: "Observation_lines",
     locateEventOutputAreaParameterName: "Estimated_area",
@@ -98,30 +98,25 @@ function login() {
             require(["dojo/request/xhr"], function (xhr) {
                 if (0 == queryResult.total) {
                     //Read defaultWebMapItemData.json and create from that, or ask the user to choose a Web map to use.
-                    try {
-                        var xhrPromise = xhr("defaultWebMapItemData.json", {
-                            handleAs: "json"
+                    var xhrPromise = xhr("defaultWebMapItemData.jsonn", {
+                        handleAs: "json"
+                    });
+                    xhrPromise.then(function (itemData) {
+                        var item = {
+                            itemType: "text",
+                            owner: loggedInUser.username,
+                            title: configOptions.webmapTitle,
+                            type: "Web Map",
+                            tags: [configOptions.webmapTitle],
+                            snippet: configOptions.webmapTitle,
+                            extent: configOptions.webmapExtent
+                        };
+                        saveWebMap(item, itemData, loggedInUser, function (webMapId) {
+                            loadMap(webMapId);
                         });
-                        xhrPromise.then(function (itemData) {
-                            var item = {
-                                itemType: "text",
-                                owner: loggedInUser.username,
-                                title: configOptions.webmapTitle,
-                                type: "Web Map",
-                                tags: [configOptions.webmapTitle],
-                                snippet: configOptions.webmapTitle,
-                                extent: configOptions.webmapExtent
-                            };
-                            saveWebMap(item, itemData, loggedInUser, function (webMapId) {
-                                loadMap(webMapId);
-                            });
-                        }, function (error) {
-                            console.error("Couldn't get default Web map: " + error);
-                        });
-                    } catch (ex) {
-                        console.error("xhr error: " + ex);
-                        //TODO tell the user it isn't going to work out?
-                    }
+                    }, function (error) {
+                        console.error("Couldn't get default Web map: " + error);
+                    });
                 } else {
                     loadMap(queryResult.results[0].id);
                 }
@@ -485,7 +480,8 @@ function getNextObjectId(featureSet) {
 }
 
 function locateEvent() {
-    dojo.byId("locateEventStatus").innerHTML = LOCATE_EVENT_LOCATING_MESSAGE;
+    var locateEventStatusElement = dojo.byId("locateEventStatus");
+    locateEventStatusElement.innerHTML = LOCATE_EVENT_LOCATING_MESSAGE;
     require(["esri/tasks/FeatureSet", "esri/graphic", "esri/symbols/SimpleMarkerSymbol", "dijit/registry"], function (FeatureSet, Graphic, SimpleMarkerSymbol, registry) {
         var targetLayerName = registry.byId("locateEventTargetLayer").value;
         var webMapFeatureSet;
