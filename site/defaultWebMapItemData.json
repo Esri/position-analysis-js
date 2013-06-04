@@ -640,7 +640,7 @@
                 "id": "TopographicMap_7179",
                 "opacity": 1,
                 "visibility": true,
-                "url": "http://afmlocomags01.esri.com/arcgis/rest/services/Basemaps/TopographicMap/MapServer",
+                "url": "https://afmcomstaging.esri.com/arcgis/rest/services/Basemaps/TopographicMap/MapServer",
                 "baseMapLayer": true,
                 "errors": [],
                 "resourceInfo": {
