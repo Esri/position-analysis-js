@@ -192,6 +192,46 @@ function setFieldValue(objectId, fieldName, newValue) {
     }
 }
 
+function deleteShape(objectId) {
+    //Delete graphic
+    var graphicsLayerInput = dojo.byId(LAYER_ID_KEY);
+    var graphicsLayerId = graphicsLayerInput.value;
+    var layer = map.getLayer(graphicsLayerId);
+    for (var graphicIndex = 0; graphicIndex < layer.graphics.length; graphicIndex++) {
+        if (layer.graphics[graphicIndex].attributes["OBJECTID"] == objectId) {
+            //Remove from addedGraphics
+            var addedGraphicsIndex = addedGraphics.indexOf(layer.graphics[graphicIndex]);
+            if (0 <= addedGraphicsIndex) {
+                addedGraphics.splice(addedGraphicsIndex, 1);
+            }
+            //Remove from graphics layer
+            layer.remove(layer.graphics[graphicIndex]);
+            break;
+        }
+    }
+    
+    //Delete from itemInfo object, which will get saved to the Web map when saveWebMap is called
+    var opLayerIndex;
+    var found = false;
+    for (opLayerIndex = 0; opLayerIndex < itemInfo.itemData.operationalLayers.length && !found; opLayerIndex++) {
+        var featureCollection = itemInfo.itemData.operationalLayers[opLayerIndex].featureCollection;
+        var layerIndex;
+        for (layerIndex = 0; layerIndex < featureCollection.layers.length && !found; layerIndex++) {
+            var layer = featureCollection.layers[layerIndex];
+            if (graphicsLayerId == layer.id) {
+                var features = layer.featureSet.features;
+                var featureIndex;
+                for (featureIndex = 0; featureIndex < features.length && !found; featureIndex++) {
+                    if (features[featureIndex].attributes["OBJECTID"] == objectId) {
+                        features.splice(featureIndex, 1);
+                        found = true;
+                    }
+                }
+            }
+        }
+    }
+}
+
 function handleDrop(evt) {
     evt.preventDefault();
     // Reference
