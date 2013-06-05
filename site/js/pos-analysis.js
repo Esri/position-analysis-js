@@ -163,8 +163,7 @@ function setFieldValue(objectId, fieldName, newValue) {
     var graphicsLayerInput = dojo.byId(LAYER_ID_KEY);
     var graphicsLayerId = graphicsLayerInput.value;
     var layer = map.getLayer(graphicsLayerId);
-    var graphicIndex;
-    for (graphicIndex = 0; graphicIndex < layer.graphics.length; graphicIndex++) {
+    for (var graphicIndex = 0; graphicIndex < layer.graphics.length; graphicIndex++) {
         if (layer.graphics[graphicIndex].attributes["OBJECTID"] == objectId) {
             layer.graphics[graphicIndex].attributes[fieldName] = newValue;
             break;
@@ -544,11 +543,11 @@ function locateEvent() {
                 if ("esriJobFailed" == jobInfo.jobStatus) {
                     locateEventStatusElement.innerHTML = "Could not locate";
                 } else {
-                    gpLocateEvent.getResultData(jobInfo.jobId, configOptions.locateEventOutputLinesParameterName/*, locateEventHandleLines, locateEventHandleLinesError*/)
+                    gpLocateEvent.getResultData(jobInfo.jobId, configOptions.locateEventOutputLinesParameterName)
                     .then(function (resultData) {
                         locateEventHandleLines(resultData, lineGraphicsLayer);
                     });
-                    gpLocateEvent.getResultData(jobInfo.jobId, configOptions.locateEventOutputAreaParameterName/*, locateEventHandleAreas, locateEventHandleAreasError*/)
+                    gpLocateEvent.getResultData(jobInfo.jobId, configOptions.locateEventOutputAreaParameterName)
                     .then(function (resultData) {
                         locateEventHandleAreas(resultData, areaGraphicsLayer);
                     });
@@ -585,6 +584,7 @@ function locateEventHandleLines(resultData, lineGraphicsLayer) {
     var features = resultData.value.features;
     for (var featureIndex = 0; featureIndex < features.length; featureIndex++) {
         var feature = features[featureIndex];
+        renameKeysToUpperCase(feature.attributes);
         feature.attributes["TYPEID"] = 0;
         feature.attributes["OBJECTID"] = getNextObjectId(lineGraphicsLayer.featureSet);
         addGraphic(graphicsLayer, feature);
@@ -598,11 +598,22 @@ function locateEventHandleAreas(resultData, areaGraphicsLayer) {
     var features = resultData.value.features;
     for (var featureIndex = 0; featureIndex < features.length; featureIndex++) {
         var feature = features[featureIndex];
+        renameKeysToUpperCase(feature.attributes);
         feature.attributes["TYPEID"] = 0;
         feature.attributes["OBJECTID"] = getNextObjectId(areaGraphicsLayer.featureSet);
         addGraphic(graphicsLayer, feature);
         var featureJson = feature.toJson();
         areaGraphicsLayer.featureSet.features.push(featureJson);
+    }
+}
+
+function renameKeysToUpperCase(obj) {
+    var keys = Object.keys(obj);
+    for (var i = 0; i < keys.length; i++) {
+        if (keys[i].toUpperCase() != keys[i]) {
+            obj[keys[i].toUpperCase()] = obj[keys[i]];
+            delete obj[keys[i]];
+        }
     }
 }
 
