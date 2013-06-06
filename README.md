@@ -41,9 +41,18 @@ variables at the top of the file as necessary:
                  for further details.
 - proxyUrl: the relative or absolute URL to the proxy page.
 - locateEventUrl: the URL of the geoprocessing task used by the Locate Event tool.
-- locateEventInputParameterName: the feature set input parameter name for the geoprocessing task.
-- locateEventOutputLinesParameterName: the name of the lines output parameter for the geoprocessing task.
-- locateEventOutputAreaParameterName: the name of the area (polygon) output parameter for the geoprocessing task.
+- locateEventInputParameterName: the feature set input parameter name for the Locate Event tool.
+- locateEventOutputLinesParameterName: the name of the lines output parameter for the Locate Event tool.
+- locateEventOutputAreaParameterName: the name of the area (polygon) output parameter for the Locate Event tool.
+- rangeRingsUrl: the URL of the geoprocessing task used by the Range Rings tool.
+- rangeRingsInputRingCentersParameterName: the name of the ring centers input parameter for the Range Rings tool.
+- rangeRingsInputRingCountParameterName: the name of the ring count input parameter for the Range Rings tool.
+- rangeRingsInputRingIntervalParameterName: the name of the ring interval input parameter for the Range Rings tool.
+- rangeRingsInputDistanceUnitsParameterName: the name of the ring interval distance units input parameter for the
+                                             Range Rings tool.
+- rangeRingsInputRadialCountParameterName: the name of the radial count input parameter for the Range Rings tool.
+- rangeRingsOutputRingsParameterName: the name of the rings output parameter for the Range Rings tool.
+- rangeRingsOutputRadialsParameterName: the name of the radials output parameter for the Range Rings tool.
 - longitudeNamesUppercase: uppercase form of CSV column names that will be treated as the longitude field
                            when uploading a CSV. Though the field names must be in uppercase in this file,
                            the field names in the CSV may be in any case.
@@ -111,7 +120,14 @@ from each point's azimuth and distance.
 
 ### Calculate Range Rings
 
-TODO not yet implemented
+Choose a layer containing one or more points to be used as centers for calculating range rings. Enter parameter values:
+
+- Number of rings: the number of range rings to calculate.
+- Ring interval: the distance (in meters) between range rings.
+- Number of radials: the number of radial lines to calculate.
+
+Then click Calculate. The geoprocessing service is called, and the range rings and radials appear on the map
+around each point.
 
 ### Settings
 
