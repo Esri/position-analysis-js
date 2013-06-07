@@ -12,6 +12,14 @@ var configOptions = {
     locateEventInputParameterName: "Observer_locations__bearing_and_distance_estimates_",
     locateEventOutputLinesParameterName: "Observation_lines",
     locateEventOutputAreaParameterName: "Estimated_area",
+    rangeRingsUrl: "https://afmcomstaging.esri.com/arcgis/rest/services/Tasks/PositionAnalysis/GPServer/RangeRings",
+    rangeRingsInputRingCentersParameterName: "Range_Ring_Centers",
+    rangeRingsInputRingCountParameterName: "Number_Of_Rings",
+    rangeRingsInputRingIntervalParameterName: "Ring_Interval",
+    rangeRingsInputDistanceUnitsParameterName: "Distance_Units",
+    rangeRingsInputRadialCountParameterName: "Number_Of_Radials",
+    rangeRingsOutputRingsParameterName: "Output_Rings",
+    rangeRingsOutputRadialsParameterName: "Output_Radials",
     longitudeNamesUppercase: [ "LON", "LONG", "LONGITUDE", "X" ],
     latitudeNamesUppercase: [ "LAT", "LATITUDE", "Y" ],
     mgrsNamesUppercase: [ "MGRS" ],
@@ -23,6 +31,7 @@ var configOptions = {
 
 var LAYER_ID_KEY = "layerId";
 var LOCATE_EVENT_LOCATING_MESSAGE = "Locating event <img border='0' cellpadding='0' cellspacing='0' src='img/ajax-loader.gif' />";
+var RANGE_RINGS_CALCULATING_MESSAGE = "Calculating range rings <img border='0' cellpadding='0' cellspacing='0' src='img/ajax-loader.gif' />";
 
 var map;
 var portal;
@@ -30,6 +39,7 @@ var itemInfo;
 var user;
 var drawToolbar;
 var gpLocateEvent;
+var gpRangeRings;
 var connectedLayers = [];
 var addedGraphics = [];
 
@@ -82,6 +92,9 @@ function (BorderContainer, ContentPane, AccordionContainer, ToggleButton, Upload
     
     gpLocateEvent = new Geoprocessor(configOptions.locateEventUrl);
     gpLocateEvent.setOutputSpatialReference({ wkid: 102100 });
+    
+    gpRangeRings = new Geoprocessor(configOptions.rangeRingsUrl);
+    gpRangeRings.setOutputSpatialReference({ wkid: 102100 });
     
     dojo.ready(function() {
         setVisibility("buttonSaveMap", false);
@@ -543,10 +556,91 @@ function getNextObjectId(featureSet) {
     return maxObjectId + 1;
 }
 
+function calculateRangeRings() {
+    var rangeRingsStatusElement = dojo.byId("rangeRingsStatus");
+    rangeRingsStatusElement.innerHTML = RANGE_RINGS_CALCULATING_MESSAGE;
+    require(["esri/tasks/FeatureSet", "esri/graphic", "dijit/registry"], function (FeatureSet, Graphic, registry) {
+        var targetLayerName = registry.byId("rangeRingsTargetLayer").value;
+        var ringCount = registry.byId("rangeRingsRingCount").value;
+        var ringDistance = registry.byId("rangeRingsDistance").value;
+        var radialCount = registry.byId("rangeRingsRadialCount").value;
+        var webMapFeatureSet;
+        var pointGraphicsLayer, lineGraphicsLayer;
+        var opLayers = this.itemInfo.itemData.operationalLayers;
+        var i;
+        for (i = 0; i < opLayers.length; i++) {
+            if (opLayers[i].id == targetLayerName) {
+                //Get sublayers
+                var sublayers = opLayers[i].featureCollection.layers;
+                var j;
+                for (j = 0; j < sublayers.length; j++) {
+                    if (!pointGraphicsLayer && "esriGeometryPoint" == sublayers[j].layerDefinition.geometryType) {
+                        webMapFeatureSet = sublayers[j].featureSet;
+                        pointGraphicsLayer = sublayers[j];
+                    } else if (!lineGraphicsLayer && "esriGeometryPolyline" == sublayers[j].layerDefinition.geometryType) {
+                        lineGraphicsLayer = sublayers[j];
+                    }
+                }
+                break;
+            }
+        }
+        if (webMapFeatureSet) {
+            var featureSet = new FeatureSet();
+            featureSet.features = [];
+            for (var featureIndex = 0; featureIndex < webMapFeatureSet.features.length; featureIndex++) {
+                var graphic = new Graphic(webMapFeatureSet.features[featureIndex]);
+                featureSet.features.push(graphic);
+            }
+            var params = {};
+            params[configOptions.rangeRingsInputRingCentersParameterName] = featureSet;
+            params[configOptions.rangeRingsInputRingCountParameterName] = ringCount;
+            params[configOptions.rangeRingsInputRingIntervalParameterName] = ringDistance;
+            params[configOptions.rangeRingsInputDistanceUnitsParameterName] = "METERS";
+            params[configOptions.rangeRingsInputRadialCountParameterName] = radialCount;
+            gpRangeRings.submitJob(params, function (jobInfo) {
+                if ("esriJobFailed" == jobInfo.jobStatus) {
+                    rangeRingsStatusElement.innerHTML = "Could not calculate range rings";
+                } else {
+                    gpRangeRings.getResultData(jobInfo.jobId, configOptions.rangeRingsOutputRadialsParameterName)
+                    .then(function (resultData) {
+                        gpHandleLines(resultData, lineGraphicsLayer);
+                    });
+                    gpRangeRings.getResultData(jobInfo.jobId, configOptions.rangeRingsOutputRingsParameterName)
+                    .then(function (resultData) {
+                        gpHandleLines(resultData, lineGraphicsLayer);
+                    });
+                }
+            }, rangeRingsStatus);
+        } else {
+            rangeRingsStatusElement.innerHTML = "Could not calculate range rings";
+        }
+    });
+}
+
+function rangeRingsStatus(jobInfo) {
+    var rangeRingsStatusElement = dojo.byId("rangeRingsStatus");
+    switch (jobInfo.jobStatus) {
+        case "esriJobExecuting": {
+            rangeRingsStatusElement.innerHTML = RANGE_RINGS_CALCULATING_MESSAGE;
+            break;
+        }
+        
+        case "esriJobFailed": {
+            rangeRingsStatusElement.innerHTML = "Could not calculate range rings";
+            break;
+        }
+        
+        case "esriJobSucceeded": {
+            rangeRingsStatusElement.innerHTML = "Calculated range rings";
+            break;
+        }
+    }
+}
+
 function locateEvent() {
     var locateEventStatusElement = dojo.byId("locateEventStatus");
     locateEventStatusElement.innerHTML = LOCATE_EVENT_LOCATING_MESSAGE;
-    require(["esri/tasks/FeatureSet", "esri/graphic", "esri/symbols/SimpleMarkerSymbol", "dijit/registry"], function (FeatureSet, Graphic, SimpleMarkerSymbol, registry) {
+    require(["esri/tasks/FeatureSet", "esri/graphic", "dijit/registry"], function (FeatureSet, Graphic, registry) {
         var targetLayerName = registry.byId("locateEventTargetLayer").value;
         var webMapFeatureSet;
         var pointGraphicsLayer, lineGraphicsLayer, areaGraphicsLayer;
@@ -585,11 +679,11 @@ function locateEvent() {
                 } else {
                     gpLocateEvent.getResultData(jobInfo.jobId, configOptions.locateEventOutputLinesParameterName)
                     .then(function (resultData) {
-                        locateEventHandleLines(resultData, lineGraphicsLayer);
+                        gpHandleLines(resultData, lineGraphicsLayer);
                     });
                     gpLocateEvent.getResultData(jobInfo.jobId, configOptions.locateEventOutputAreaParameterName)
                     .then(function (resultData) {
-                        locateEventHandleAreas(resultData, areaGraphicsLayer);
+                        gpHandleAreas(resultData, areaGraphicsLayer);
                     });
                 }
             }, locateEventStatus);
@@ -619,7 +713,7 @@ function locateEventStatus(jobInfo) {
     }
 }
 
-function locateEventHandleLines(resultData, lineGraphicsLayer) {
+function gpHandleLines(resultData, lineGraphicsLayer) {
     var graphicsLayer = map.getLayer(lineGraphicsLayer.id);
     var features = resultData.value.features;
     for (var featureIndex = 0; featureIndex < features.length; featureIndex++) {
@@ -633,7 +727,7 @@ function locateEventHandleLines(resultData, lineGraphicsLayer) {
     }
 }
 
-function locateEventHandleAreas(resultData, areaGraphicsLayer) {
+function gpHandleAreas(resultData, areaGraphicsLayer) {
     var graphicsLayer = map.getLayer(areaGraphicsLayer.id);
     var features = resultData.value.features;
     for (var featureIndex = 0; featureIndex < features.length; featureIndex++) {
