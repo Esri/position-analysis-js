@@ -205,7 +205,15 @@ function setFieldValue(objectId, fieldName, newValue) {
     }
 }
 
-function deleteShape(objectId) {
+/**
+ * Deletes a shape, from the map's graphics and from the Web map. You have to call saveMap or saveWebMap
+ * to persist the change back to the portal.
+ * @param objectId the object ID for the shape to delete. Its layer is determined by the LAYER_ID_KEY
+ *                 input for the popup currently displayed.
+ * @param hidePopup (optional, default is true) if true, and if only one shape is selected in the popup,
+ *                  hide the map's popup (map.infoWindow) after deleting the shape.
+ */
+function deleteShape(objectId, hidePopup) {
     //Delete graphic
     var graphicsLayerInput = dojo.byId(LAYER_ID_KEY);
     var graphicsLayerId = graphicsLayerInput.value;
@@ -242,6 +250,20 @@ function deleteShape(objectId) {
                 }
             }
         }
+    }
+    
+    if (map.infoWindow.features.length > 1) {
+        //Remove deleted feature from the infoWindow and select another feature
+        var feature = map.infoWindow.getSelectedFeature();
+        for (var featureIndex = 0; featureIndex < map.infoWindow.features.length; featureIndex++) {
+            if (feature === map.infoWindow.features[featureIndex]) {
+                map.infoWindow.features.splice(featureIndex, 1);//i.e. remove feature at featureIndex
+                map.infoWindow.select(0 == featureIndex ? 0 : featureIndex - 1);
+                break;
+            }
+        }
+    } else if (undefined == hidePopup || true == hidePopup) {
+        map.infoWindow.hide();
     }
 }
 
