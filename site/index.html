@@ -118,11 +118,14 @@
                 <label for="rangeRingsTargetLayer">Use these map points:</label>
                 <select data-dojo-type="dijit/form/Select" id="rangeRingsTargetLayer" name="rangeRingsTargetLayer" style="width: 100%"></select>
                 <label for="rangeRingsRingCount">Number of rings</label><input data-dojo-type="dijit/form/NumberSpinner" id="rangeRingsRingCount" name="rangeRingsRingCount" value="4" data-dojo-props="constraints: { min: 1, places: 0}" style="width: 63px"/><br/>
-                <label for="rangeRingsRingCount">Ring interval (m)</label><input data-dojo-type="dijit/form/NumberTextBox" id="rangeRingsDistance" name="rangeRingsDistance" value="250" data-dojo-props="constraints: { min: 0}" style="width: 60px"/><br/>
+                <label for="rangeRingsDistance">Ring interval (m)</label><input data-dojo-type="dijit/form/NumberTextBox" id="rangeRingsDistance" name="rangeRingsDistance" value="250" data-dojo-props="constraints: { min: 0}" style="width: 60px"/><br/>
                 <label for="rangeRingsRadialCount">Number of radials</label><input data-dojo-type="dijit/form/NumberSpinner" id="rangeRingsRadialCount" name="rangeRingsRadialCount" value="4" data-dojo-props="constraints: { min: 1, places: 0}" style="width: 51px"/><br/>
-                <button type="button" data-dojo-type="dijit/form/Button">
-                    Calculate
+                <button type="button" data-dojo-type="dijit/form/Button">Calculate
+                    <script type="dojo/on" data-dojo-event="click" data-dojo-args="evt">
+                        calculateRangeRings();
+                    </script>
                 </button>
+                <p id="rangeRingsStatus"></p>
             </div>
             
             <!-- Login/account widget -->
