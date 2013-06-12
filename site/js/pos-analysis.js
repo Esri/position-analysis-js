@@ -32,6 +32,7 @@ var configOptions = {
 var LAYER_ID_KEY = "layerId";
 var LOCATE_EVENT_LOCATING_MESSAGE = "Locating event <img border='0' cellpadding='0' cellspacing='0' src='img/ajax-loader.gif' />";
 var RANGE_RINGS_CALCULATING_MESSAGE = "Calculating range rings <img border='0' cellpadding='0' cellspacing='0' src='img/ajax-loader.gif' />";
+var USE_DOWNLOADIFY = 9 >= ieVersion();
 
 var map;
 var portal;
@@ -42,6 +43,23 @@ var gpLocateEvent;
 var gpRangeRings;
 var connectedLayers = [];
 var addedGraphics = [];
+
+/**
+ * Adapted from http://stackoverflow.com/questions/5574842/best-way-to-check-for-ie-less-than-9-in-javascript-without-library
+ */
+function ieVersion() {
+    var undef,
+        v = 3,
+        div = document.createElement('div'),
+        all = div.getElementsByTagName('i');
+
+    while (
+        div.innerHTML = '<!--[if gt IE ' + (++v) + ']><i></i><![endif]-->',
+        all[0]
+    );
+
+    return v > 4 ? v : undef;
+}
 
 require([
     "dijit/layout/BorderContainer",
@@ -99,6 +117,35 @@ function (BorderContainer, ContentPane, AccordionContainer, ToggleButton, Upload
     dojo.ready(function() {
         setVisibility("buttonSaveMap", false);
     });
+    
+    if (USE_DOWNLOADIFY) {
+        require(["dojo/request/script"], function (script){
+            script.get("Downloadify/js/swfobject.js")
+            .then(function (data) {
+                script.get("Downloadify/js/downloadify.min.js")
+                .then(function (data) {
+                    Downloadify.create("exportDownloadify", {
+                        filename: function () {
+                            return "testfile.txt";
+                        },
+                        data: function () {
+                            return "This is a bunch of text to save.";
+                        },
+                        onComplete: function(){},
+                        onCancel: function(){},
+                        onError: function(){},
+                        transparent: false,
+                        swf: 'Downloadify/media/downloadify.swf',
+                        downloadImage: 'Downloadify/images/download.png',
+                        width: 116,
+                        height: 18,
+                        transparent: true,
+                        append: false
+                    });
+                });
+            });
+        });
+    }
 });
 
 function login() {
@@ -410,6 +457,7 @@ function loadMap(webMapId) {
                     });
                     layerListWidget.addChild(checkbox);
                     var label = domConstruct.create("label", { id: "label" + checkbox.id, "for": checkbox.id, innerHTML: layer.title }, layerListDomElement);
+                    label.htmlFor = checkbox.id;
                     var labelEditBox = new dijit.InlineEditBox({
                         editor: TextBox,
                         onChange: function (value) {
@@ -793,4 +841,60 @@ function addGraphic(graphicsLayer, graphic) {
     listenForRemovedGraphics(graphicsLayer);
     graphicsLayer.add(graphic);
     addedGraphics.push(graphic);
+}
+
+function downloadLayer(menuItem) {
+    return downloadLayerById(dojo.byId(menuItem.getParent().currentTarget.htmlFor).value);
+}
+
+function downloadLayerById(layerId) {
+    console.log("downloadLayer " + layerId);
+    var pointGraphicsLayer, lineGraphicsLayer, areaGraphicsLayer;
+    var opLayers = itemInfo.itemData.operationalLayers;
+    for (var i = 0; i < opLayers.length; i++) {
+        if (opLayers[i].id == layerId) {
+            //Get sublayers
+            var sublayers = opLayers[i].featureCollection.layers;
+            for (var j = 0; j < sublayers.length; j++) {
+                if (!pointGraphicsLayer && "esriGeometryPoint" == sublayers[j].layerDefinition.geometryType) {
+                    pointGraphicsLayer = sublayers[j];
+                } else if (!lineGraphicsLayer && "esriGeometryPolyline" == sublayers[j].layerDefinition.geometryType) {
+                    lineGraphicsLayer = sublayers[j];
+                } else if (!areaGraphicsLayer && "esriGeometryPolygon" == sublayers[j].layerDefinition.geometryType) {
+                    areaGraphicsLayer = sublayers[j];
+                }
+            }
+            break;
+        }
+    }
+    console.log("got layers");
+    //window.open("data:application/csv;charset=utf-8,Col1%2CCol2%2CCol3%0AVal1%2CVal2%2CVal3%0AVal11%2CVal22%2CVal33%0AVal111%2CVal222%2CVal333");
+    var str = "Name, Price\nApple, 2\nOrange, 3";
+    var uri = 'data:text/csv;charset=utf-8,' + str;
+
+    var downloadLink = document.createElement("a");
+    downloadLink.href = encodeURI(uri);
+    downloadLink.download = "data.csv";
+
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+}
+
+function completeDownload() {
+    if (USE_DOWNLOADIFY) {
+        require(["dijit/registry", "dijit/popup", "dojo/on"], function (registry, popup, on) {
+            var layerContextMenu = registry.byId("layerContextMenu");
+            var signal = on(layerContextMenu, "onShow", function () {
+                console.log("in show listener");
+                signal.remove();
+                popup.close(layerContextMenu);
+            });
+            popup.open({
+                popup: layerContextMenu,
+                x: -999,
+                y: -999
+            });
+        });
+    }
 }

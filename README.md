@@ -158,6 +158,6 @@ limitations under the License.
 A copy of the license is available in the repository's
 [license.txt](license.txt) file.
 
-Note: Portions of this code use USNG which is licensed under the MIT License.
+Note: Portions of this code use USNG and Downloadify, which are licensed under the MIT License.
 See [license-ThirdParty.txt](license-ThirdParty.txt) for the details 
 of this license.
