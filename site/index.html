@@ -156,8 +156,8 @@
     <div data-dojo-type="dijit/Menu" id="layerContextMenu" style="display: none;" data-dojo-props="onBlur: completeDownload">
         <div data-dojo-type="dijit/MenuItem" data-dojo-props="iconClass:'dijitIconTable',
             onClick:function(){alert('TODO not actually viewing anything, just a test!')}">View Table</div>
-        <div data-dojo-type="dijit/MenuItem" data-dojo-props="iconClass:'dijitIconSave',
-            onClick:function(){downloadLayer(this);}"><span id="exportDownloadify">Export Layer</span></div>
+        <div id="exportLayerMenuItem" data-dojo-type="dijit/MenuItem" data-dojo-props="iconClass:'dijitIconSave',
+            onClick:function(){downloadLayer(this);}"><span id="exportDownloadify">Download Layer</span></div>
         <div data-dojo-type="dijit/MenuItem" data-dojo-props="iconClass:'dijitIconDelete',
             onClick:function(){alert('TODO not actually removing anything, just a test!')}">Remove Layer</div>
     </div>

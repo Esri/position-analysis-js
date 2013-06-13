@@ -124,23 +124,26 @@ function (BorderContainer, ContentPane, AccordionContainer, ToggleButton, Upload
             .then(function (data) {
                 script.get("Downloadify/js/downloadify.min.js")
                 .then(function (data) {
-                    Downloadify.create("exportDownloadify", {
-                        filename: function () {
-                            return "testfile.txt";
-                        },
-                        data: function () {
-                            return "This is a bunch of text to save.";
-                        },
-                        onComplete: function(){},
-                        onCancel: function(){},
-                        onError: function(){},
-                        transparent: false,
-                        swf: 'Downloadify/media/downloadify.swf',
-                        downloadImage: 'Downloadify/images/download.png',
-                        width: 116,
-                        height: 18,
-                        transparent: true,
-                        append: false
+                    require(["dijit/registry"], function (registry) {
+                        var downloadifyElementName = "exportDownloadify";
+                        Downloadify.create(downloadifyElementName, {
+                            filename: function () {
+                                return "testfile.csv";
+                            },
+                            data: function () {
+                                var exportLayerMenuItem = registry.byId("exportLayerMenuItem");
+                                return layerToJson(exportLayerMenuItem);
+                            },
+                            onComplete: function(){},
+                            onCancel: function(){},
+                            onError: function(){},
+                            swf: 'Downloadify/media/downloadify.swf',
+                            downloadImage: 'Downloadify/images/download.png',
+                            width: 116,
+                            height: 18,
+                            transparent: true,
+                            append: false
+                        });
                     });
                 });
             });
@@ -844,11 +847,20 @@ function addGraphic(graphicsLayer, graphic) {
 }
 
 function downloadLayer(menuItem) {
-    return downloadLayerById(dojo.byId(menuItem.getParent().currentTarget.htmlFor).value);
+    var str = layerToJson(menuItem);
+    var uri = 'data:text/csv;charset=utf-8,' + str;
+
+    var downloadLink = document.createElement("a");
+    downloadLink.href = encodeURI(uri);
+    downloadLink.download = "data.csv";
+
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
 }
 
-function downloadLayerById(layerId) {
-    console.log("downloadLayer " + layerId);
+function layerToJson(menuItem) {
+    var layerId = dojo.byId(menuItem.getParent().currentTarget.htmlFor).value;
     var pointGraphicsLayer, lineGraphicsLayer, areaGraphicsLayer;
     var opLayers = itemInfo.itemData.operationalLayers;
     for (var i = 0; i < opLayers.length; i++) {
@@ -867,18 +879,8 @@ function downloadLayerById(layerId) {
             break;
         }
     }
-    console.log("got layers");
-    //window.open("data:application/csv;charset=utf-8,Col1%2CCol2%2CCol3%0AVal1%2CVal2%2CVal3%0AVal11%2CVal22%2CVal33%0AVal111%2CVal222%2CVal333");
     var str = "Name, Price\nApple, 2\nOrange, 3";
-    var uri = 'data:text/csv;charset=utf-8,' + str;
-
-    var downloadLink = document.createElement("a");
-    downloadLink.href = encodeURI(uri);
-    downloadLink.download = "data.csv";
-
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
+    return str;
 }
 
 function completeDownload() {
