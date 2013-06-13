@@ -67,7 +67,7 @@ require([
     "dijit/layout/AccordionContainer",
     "dijit/form/ToggleButton",
     "dojox/form/Uploader",
-    "dojox/embed/Flash",
+    "dojox/form/uploader/plugins/Flash",
     "dijit/form/NumberTextBox",
     "dijit/form/CheckBox",
     "dijit/form/Select",
@@ -88,6 +88,10 @@ require([
 function (BorderContainer, ContentPane, AccordionContainer, ToggleButton, Uploader, Flash, NumberTextBox, CheckBox, Select, InlineEditBox, NumberSpinner, Menu, MenuItem, Map, ArcGISTiledMapServiceLayer, IdentityManager, Portal, utils, Draw, Geoprocessor, on, JSON) {
     console.log("Welcome to Position Analysis Web, using Dojo version " + dojo.version);
     
+    if (9 <= ieVersion()) {
+        dojo.byId("csvUploadMessage").innerHTML = "Upload CSV here:";
+    }
+    
     esri.arcgis.utils.arcgisUrl = configOptions.portalUrl + configOptions.sharingPath;
     if (configOptions.proxyRequired) {
         esri.config.defaults.io.proxyUrl = configOptions.proxyUrl;
@@ -96,7 +100,7 @@ function (BorderContainer, ContentPane, AccordionContainer, ToggleButton, Upload
     portal = new esri.arcgis.Portal(configOptions.portalUrl);            
 
     //Setup the file upload widget
-    var fileInput = new Uploader({
+    var fileInput = new dojox.form.Uploader({
         onChange: function (evt) {
             var input = this.focusNode;
             if (input.files && 0 < input.files.length) {
@@ -861,26 +865,112 @@ function downloadLayer(menuItem) {
 
 function layerToJson(menuItem) {
     var layerId = dojo.byId(menuItem.getParent().currentTarget.htmlFor).value;
-    var pointGraphicsLayer, lineGraphicsLayer, areaGraphicsLayer;
     var opLayers = itemInfo.itemData.operationalLayers;
     for (var i = 0; i < opLayers.length; i++) {
         if (opLayers[i].id == layerId) {
             //Get sublayers
             var sublayers = opLayers[i].featureCollection.layers;
-            for (var j = 0; j < sublayers.length; j++) {
-                if (!pointGraphicsLayer && "esriGeometryPoint" == sublayers[j].layerDefinition.geometryType) {
-                    pointGraphicsLayer = sublayers[j];
-                } else if (!lineGraphicsLayer && "esriGeometryPolyline" == sublayers[j].layerDefinition.geometryType) {
-                    lineGraphicsLayer = sublayers[j];
-                } else if (!areaGraphicsLayer && "esriGeometryPolygon" == sublayers[j].layerDefinition.geometryType) {
-                    areaGraphicsLayer = sublayers[j];
+            var fieldNames = [];
+            var allFeatures = [];
+            for (var sublayerIndex = 0; sublayerIndex < sublayers.length; sublayerIndex++) {
+                var sublayer = sublayers[sublayerIndex];
+                var fields = sublayer.layerDefinition.fields;
+                for (var fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
+                    var fieldName = fields[fieldIndex].name;
+                    if (-1 >= fieldNames.indexOf(fieldName)) {
+                        //Skip OBJECTID, because there will be duplicates between point, line, and polygon.
+                        if ("OBJECTID" != fieldName) {
+                            fieldNames.push(fieldName);
+                        }
+                    }
+                }
+                allFeatures = allFeatures.concat(sublayer.featureSet.features);
+            }
+            
+            var str = "";
+            var fieldSep = "";
+            var lineSep = "";
+            for (var fieldIndex = 0; fieldIndex < fieldNames.length; fieldIndex++) {
+                str += fieldSep;
+                fieldSep = ",";
+                lineSep = "\n";
+                var needsCsvQuotes = isNeedsCsvQuotes(fieldNames[fieldIndex]);
+                if (needsCsvQuotes) {
+                    str += "\"";
+                }
+                str += escapeCsv(fieldNames[fieldIndex]);
+                if (needsCsvQuotes) {
+                    str += "\"";
                 }
             }
-            break;
+            str += fieldSep + "GEOMETRY";
+            fieldSep = ",";
+            for (var featureIndex = 0; featureIndex < allFeatures.length; featureIndex++) {
+                str += lineSep;
+                lineSep = "\n";
+                fieldSep = "";
+                var feature = allFeatures[featureIndex];
+                for (var fieldIndex = 0; fieldIndex < fieldNames.length; fieldIndex++) {
+                    str += fieldSep;
+                    fieldSep = ",";
+                    var value = feature.attributes[fieldNames[fieldIndex]];
+                    if (undefined != value) {
+                        //Make sure "true" and "false" stay that way in the CSV
+                        if (true === value) {
+                            value = "true";
+                        } else if (false === value) {
+                            value = "false";
+                        }
+                        var needsCsvQuotes = isNeedsCsvQuotes(value);
+                        if (needsCsvQuotes) {
+                            str += "\"";
+                        }
+                        str += escapeCsv(value);
+                        if (needsCsvQuotes) {
+                            str += "\"";
+                        }
+                    }
+                }
+                
+                str += fieldSep;
+                fieldSep = ",";
+                var geometryString = JSON.stringify(feature.geometry);
+                var needsCsvQuotes = isNeedsCsvQuotes(geometryString);
+                if (needsCsvQuotes) {
+                    str += "\"";
+                }
+                str += escapeCsv(geometryString);
+                if (needsCsvQuotes) {
+                    str += "\"";
+                }
+            }
+            
+            return str;
         }
     }
-    var str = "Name, Price\nApple, 2\nOrange, 3";
-    return str;
+    return "";
+}
+
+function isNumeric(n) {
+    return !isNaN(parseFloat(n)) && isFinite(n);
+}
+
+function isNeedsCsvQuotes(str) {
+    if (isNumeric(str)) {
+        return false;
+    }
+    
+    var pattern = "[\\n\\r\",]";
+    var matches = str.match(pattern);
+    return (matches && 0 < matches.length);
+}
+
+function escapeCsv(str) {
+    if (isNumeric(str)) {
+        return str.toString();
+    } else {
+        return str.replace(/\"/g, "\"\"");
+    }
 }
 
 function completeDownload() {
@@ -888,7 +978,6 @@ function completeDownload() {
         require(["dijit/registry", "dijit/popup", "dojo/on"], function (registry, popup, on) {
             var layerContextMenu = registry.byId("layerContextMenu");
             var signal = on(layerContextMenu, "onShow", function () {
-                console.log("in show listener");
                 signal.remove();
                 popup.close(layerContextMenu);
             });
