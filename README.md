@@ -139,6 +139,18 @@ Click Save Map to save the feature layers. These layers are stored in a Web map.
 
 Check the checkboxes to change layers' visibility. Click a layer name to rename that layer.
 
+Right-click a layer name to access some actions for that layer:
+
+- View Table: not yet implemented.
+- Download Layer: this action allows you to download the data in this layer as comma-separated values (CSV).
+                  The browser gives you the option to save a CSV file. Some newer HTML5-compatible browsers
+                  offer a choice between saving a CSV file and opening the CSV file. Geometries appear in
+                  [ArcGIS REST API JSON format
+                  ](http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Geometry_Objects/02r3000000n1000000/).
+                  Point geometries also appear as latitude/longitude and MGRS. This CSV file is the type of
+                  file expected by the Locate Event tool.
+- Remove Layer: not yet implemented.
+
 ## Licensing
 
 Copyright 2013 Esri
