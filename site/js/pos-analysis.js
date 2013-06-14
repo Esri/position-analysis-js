@@ -905,6 +905,7 @@ function layerToJson(menuItem) {
             }
             str += fieldSep + "GEOMETRY";
             fieldSep = ",";
+            str += fieldSep + "LATITUDE" + fieldSep + "LONGITUDE" + fieldSep + "MGRS";
             for (var featureIndex = 0; featureIndex < allFeatures.length; featureIndex++) {
                 str += lineSep;
                 lineSep = "\n";
@@ -934,7 +935,9 @@ function layerToJson(menuItem) {
                 
                 str += fieldSep;
                 fieldSep = ",";
-                var geometryString = JSON.stringify(feature.geometry);
+                var geomGcs = esri.geometry.webMercatorToGeographic(esri.geometry.fromJson(feature.geometry));
+                var geomGcsJson = geomGcs.toJson();
+                var geometryString = JSON.stringify(geomGcsJson);
                 var needsCsvQuotes = isNeedsCsvQuotes(geometryString);
                 if (needsCsvQuotes) {
                     str += "\"";
@@ -942,6 +945,11 @@ function layerToJson(menuItem) {
                 str += escapeCsv(geometryString);
                 if (needsCsvQuotes) {
                     str += "\"";
+                }
+                
+                if ("point" == geomGcs.type) {
+                    var mgrs = org.mymanatee.common.usng.LLtoMGRS(geomGcs.y, geomGcs.x, 5);
+                    str += fieldSep + geomGcs.y + fieldSep + geomGcs.x + fieldSep + mgrs;
                 }
             }
             

@@ -869,7 +869,7 @@ org.mymanatee.common.usng.isUSNG = function(inputStr) {
 org.mymanatee.common.usng.LLtoMGRS = function(lat, lon, precision)
 {
    var mgrs_str="";
-   var usng_str = LLtoUSNG(lat, lon, precision);
+   var usng_str = org.mymanatee.common.usng.LLtoUSNG(lat, lon, precision);
 
    // remove space delimiters to conform to mgrs spec
    var regexp = / /g
