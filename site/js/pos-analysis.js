@@ -132,7 +132,8 @@ function (BorderContainer, ContentPane, AccordionContainer, ToggleButton, Upload
                         var downloadifyElementName = "exportDownloadify";
                         Downloadify.create(downloadifyElementName, {
                             filename: function () {
-                                return "testfile.csv";
+                                var menuItem = registry.byId("exportLayerMenuItem");
+                                return menuItem.getParent().currentTarget.innerHTML + ".csv";
                             },
                             data: function () {
                                 var exportLayerMenuItem = registry.byId("exportLayerMenuItem");
@@ -856,7 +857,7 @@ function downloadLayer(menuItem) {
 
     var downloadLink = document.createElement("a");
     downloadLink.href = encodeURI(uri);
-    downloadLink.download = "data.csv";
+    downloadLink.download = menuItem.getParent().currentTarget.innerHTML + ".csv";
 
     document.body.appendChild(downloadLink);
     downloadLink.click();
