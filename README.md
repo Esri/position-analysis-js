@@ -110,6 +110,9 @@ the configuration variables):
            ](http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Geometry_Objects/02r3000000n1000000/)
 - Azimuth (in degrees)
 - Distance (in meters)
+
+Tip: if you want to see what the CSV should look like, go to Manage Layers and download a layer, then open
+the CSV to see the format.
            
 ### Locate Event
 
