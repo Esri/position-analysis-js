@@ -95,7 +95,7 @@
                     </button>
                 </p>
                 <p>
-                    Drag a CSV to the map or upload here:
+                    <span id="csvUploadMessage">Drag a CSV to the map or upload here:</span>
                     <div id="addShapesUploader"></div>
                 </p>
             </div>
@@ -153,13 +153,13 @@
     </div>
 
     <!-- Layer context menu (hidden by default; displayed when and where needed on the layer list) -->
-    <div data-dojo-type="dijit/Menu" id="layerContextMenu" style="display: none;">
+    <div data-dojo-type="dijit/Menu" id="layerContextMenu" style="display: none;" data-dojo-props="onBlur: completeDownload">
         <div data-dojo-type="dijit/MenuItem" data-dojo-props="iconClass:'dijitIconTable',
-            onClick:function(){alert('not actually viewing anything, just a test!')}">View Table</div>
-        <div data-dojo-type="dijit/MenuItem" data-dojo-props="iconClass:'dijitIconSave',
-            onClick:function(){alert('not actually downloading anything, just a test!')}">Download Table</div>
+            onClick:function(){alert('TODO not actually viewing anything, just a test!')}">View Table</div>
+        <div id="exportLayerMenuItem" data-dojo-type="dijit/MenuItem" data-dojo-props="iconClass:'dijitIconSave',
+            onClick:function(){downloadLayer(this);}"><span id="exportDownloadify">Download Layer</span></div>
         <div data-dojo-type="dijit/MenuItem" data-dojo-props="iconClass:'dijitIconDelete',
-            onClick:function(){alert('not actually removing anything, just a test!')}">Remove Layer</div>
+            onClick:function(){alert('TODO not actually removing anything, just a test!')}">Remove Layer</div>
     </div>
     
     <!-- Popup InfoTemplate content (hidden; only innerHTML of this div is used; search for dojo.byId("infoTemplateContent") in JavaScript code for details) -->

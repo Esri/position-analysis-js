@@ -32,6 +32,7 @@ var configOptions = {
 var LAYER_ID_KEY = "layerId";
 var LOCATE_EVENT_LOCATING_MESSAGE = "Locating event <img border='0' cellpadding='0' cellspacing='0' src='img/ajax-loader.gif' />";
 var RANGE_RINGS_CALCULATING_MESSAGE = "Calculating range rings <img border='0' cellpadding='0' cellspacing='0' src='img/ajax-loader.gif' />";
+var USE_DOWNLOADIFY = 9 >= ieVersion();
 
 var map;
 var portal;
@@ -43,13 +44,30 @@ var gpRangeRings;
 var connectedLayers = [];
 var addedGraphics = [];
 
+/**
+ * Adapted from http://stackoverflow.com/questions/5574842/best-way-to-check-for-ie-less-than-9-in-javascript-without-library
+ */
+function ieVersion() {
+    var undef,
+        v = 3,
+        div = document.createElement('div'),
+        all = div.getElementsByTagName('i');
+
+    while (
+        div.innerHTML = '<!--[if gt IE ' + (++v) + ']><i></i><![endif]-->',
+        all[0]
+    );
+
+    return v > 4 ? v : undef;
+}
+
 require([
     "dijit/layout/BorderContainer",
     "dijit/layout/ContentPane",
     "dijit/layout/AccordionContainer",
     "dijit/form/ToggleButton",
     "dojox/form/Uploader",
-    "dojox/embed/Flash",
+    "dojox/form/uploader/plugins/Flash",
     "dijit/form/NumberTextBox",
     "dijit/form/CheckBox",
     "dijit/form/Select",
@@ -70,6 +88,10 @@ require([
 function (BorderContainer, ContentPane, AccordionContainer, ToggleButton, Uploader, Flash, NumberTextBox, CheckBox, Select, InlineEditBox, NumberSpinner, Menu, MenuItem, Map, ArcGISTiledMapServiceLayer, IdentityManager, Portal, utils, Draw, Geoprocessor, on, JSON) {
     console.log("Welcome to Position Analysis Web, using Dojo version " + dojo.version);
     
+    if (9 <= ieVersion()) {
+        dojo.byId("csvUploadMessage").innerHTML = "Upload CSV here:";
+    }
+    
     esri.arcgis.utils.arcgisUrl = configOptions.portalUrl + configOptions.sharingPath;
     if (configOptions.proxyRequired) {
         esri.config.defaults.io.proxyUrl = configOptions.proxyUrl;
@@ -78,7 +100,7 @@ function (BorderContainer, ContentPane, AccordionContainer, ToggleButton, Upload
     portal = new esri.arcgis.Portal(configOptions.portalUrl);            
 
     //Setup the file upload widget
-    var fileInput = new Uploader({
+    var fileInput = new dojox.form.Uploader({
         onChange: function (evt) {
             var input = this.focusNode;
             if (input.files && 0 < input.files.length) {
@@ -99,6 +121,38 @@ function (BorderContainer, ContentPane, AccordionContainer, ToggleButton, Upload
     dojo.ready(function() {
         setVisibility("buttonSaveMap", false);
     });
+    
+    if (USE_DOWNLOADIFY) {
+        require(["dojo/request/script"], function (script){
+            script.get("Downloadify/js/swfobject.js")
+            .then(function (data) {
+                script.get("Downloadify/js/downloadify.min.js")
+                .then(function (data) {
+                    require(["dijit/registry"], function (registry) {
+                        var downloadifyElementName = "exportDownloadify";
+                        Downloadify.create(downloadifyElementName, {
+                            filename: function () {
+                                return "testfile.csv";
+                            },
+                            data: function () {
+                                var exportLayerMenuItem = registry.byId("exportLayerMenuItem");
+                                return layerToJson(exportLayerMenuItem);
+                            },
+                            onComplete: function(){},
+                            onCancel: function(){},
+                            onError: function(){},
+                            swf: 'Downloadify/media/downloadify.swf',
+                            downloadImage: 'Downloadify/images/download.png',
+                            width: 116,
+                            height: 18,
+                            transparent: true,
+                            append: false
+                        });
+                    });
+                });
+            });
+        });
+    }
 });
 
 function login() {
@@ -410,6 +464,7 @@ function loadMap(webMapId) {
                     });
                     layerListWidget.addChild(checkbox);
                     var label = domConstruct.create("label", { id: "label" + checkbox.id, "for": checkbox.id, innerHTML: layer.title }, layerListDomElement);
+                    label.htmlFor = checkbox.id;
                     var labelEditBox = new dijit.InlineEditBox({
                         editor: TextBox,
                         onChange: function (value) {
@@ -793,4 +848,152 @@ function addGraphic(graphicsLayer, graphic) {
     listenForRemovedGraphics(graphicsLayer);
     graphicsLayer.add(graphic);
     addedGraphics.push(graphic);
+}
+
+function downloadLayer(menuItem) {
+    var str = layerToJson(menuItem);
+    var uri = 'data:text/csv;charset=utf-8,' + str;
+
+    var downloadLink = document.createElement("a");
+    downloadLink.href = encodeURI(uri);
+    downloadLink.download = "data.csv";
+
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+}
+
+function layerToJson(menuItem) {
+    var layerId = dojo.byId(menuItem.getParent().currentTarget.htmlFor).value;
+    var opLayers = itemInfo.itemData.operationalLayers;
+    for (var i = 0; i < opLayers.length; i++) {
+        if (opLayers[i].id == layerId) {
+            //Get sublayers
+            var sublayers = opLayers[i].featureCollection.layers;
+            var fieldNames = [];
+            var allFeatures = [];
+            for (var sublayerIndex = 0; sublayerIndex < sublayers.length; sublayerIndex++) {
+                var sublayer = sublayers[sublayerIndex];
+                var fields = sublayer.layerDefinition.fields;
+                for (var fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
+                    var fieldName = fields[fieldIndex].name;
+                    if (-1 >= fieldNames.indexOf(fieldName)) {
+                        //Skip OBJECTID, because there will be duplicates between point, line, and polygon.
+                        if ("OBJECTID" != fieldName) {
+                            fieldNames.push(fieldName);
+                        }
+                    }
+                }
+                allFeatures = allFeatures.concat(sublayer.featureSet.features);
+            }
+            
+            var str = "";
+            var fieldSep = "";
+            var lineSep = "";
+            for (var fieldIndex = 0; fieldIndex < fieldNames.length; fieldIndex++) {
+                str += fieldSep;
+                fieldSep = ",";
+                lineSep = "\n";
+                var needsCsvQuotes = isNeedsCsvQuotes(fieldNames[fieldIndex]);
+                if (needsCsvQuotes) {
+                    str += "\"";
+                }
+                str += escapeCsv(fieldNames[fieldIndex]);
+                if (needsCsvQuotes) {
+                    str += "\"";
+                }
+            }
+            str += fieldSep + "GEOMETRY";
+            fieldSep = ",";
+            str += fieldSep + "LATITUDE" + fieldSep + "LONGITUDE" + fieldSep + "MGRS";
+            for (var featureIndex = 0; featureIndex < allFeatures.length; featureIndex++) {
+                str += lineSep;
+                lineSep = "\n";
+                fieldSep = "";
+                var feature = allFeatures[featureIndex];
+                for (var fieldIndex = 0; fieldIndex < fieldNames.length; fieldIndex++) {
+                    str += fieldSep;
+                    fieldSep = ",";
+                    var value = feature.attributes[fieldNames[fieldIndex]];
+                    if (undefined != value) {
+                        //Make sure "true" and "false" stay that way in the CSV
+                        if (true === value) {
+                            value = "true";
+                        } else if (false === value) {
+                            value = "false";
+                        }
+                        var needsCsvQuotes = isNeedsCsvQuotes(value);
+                        if (needsCsvQuotes) {
+                            str += "\"";
+                        }
+                        str += escapeCsv(value);
+                        if (needsCsvQuotes) {
+                            str += "\"";
+                        }
+                    }
+                }
+                
+                str += fieldSep;
+                fieldSep = ",";
+                var geomGcs = esri.geometry.webMercatorToGeographic(esri.geometry.fromJson(feature.geometry));
+                var geomGcsJson = geomGcs.toJson();
+                var geometryString = JSON.stringify(geomGcsJson);
+                var needsCsvQuotes = isNeedsCsvQuotes(geometryString);
+                if (needsCsvQuotes) {
+                    str += "\"";
+                }
+                str += escapeCsv(geometryString);
+                if (needsCsvQuotes) {
+                    str += "\"";
+                }
+                
+                if ("point" == geomGcs.type) {
+                    var mgrs = org.mymanatee.common.usng.LLtoMGRS(geomGcs.y, geomGcs.x, 5);
+                    str += fieldSep + geomGcs.y + fieldSep + geomGcs.x + fieldSep + mgrs;
+                }
+            }
+            
+            return str;
+        }
+    }
+    return "";
+}
+
+function isNumeric(n) {
+    return !isNaN(parseFloat(n)) && isFinite(n);
+}
+
+function isNeedsCsvQuotes(str) {
+    if (isNumeric(str)) {
+        return false;
+    }
+    
+    var pattern = "[\\n\\r\",]";
+    var matches = str.match(pattern);
+    return (matches && 0 < matches.length);
+}
+
+function escapeCsv(str) {
+    if (isNumeric(str)) {
+        return str.toString();
+    } else {
+        return str.replace(/\"/g, "\"\"");
+    }
+}
+
+function completeDownload() {
+    if (USE_DOWNLOADIFY) {
+        require(["dijit/registry", "dijit/popup", "dojo/on"], function (registry, popup, on) {
+            var layerContextMenu = registry.byId("layerContextMenu");
+            var signal = on(layerContextMenu, "onShow", function () {
+                signal.remove();
+                popup.close(layerContextMenu);
+            });
+            popup.open({
+                popup: layerContextMenu,
+                x: -999,
+                y: -999
+            });
+        });
+    }
 }
