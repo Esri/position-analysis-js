@@ -120,6 +120,7 @@ function (BorderContainer, ContentPane, AccordionContainer, ToggleButton, Upload
     
     dojo.ready(function() {
         setVisibility("buttonSaveMap", false);
+        login();
     });
     
     if (USE_DOWNLOADIFY) {
@@ -210,6 +211,13 @@ function login() {
             //portal URL or even a bad portal. Tell the user.
             settingsStatusElement.innerHTML = error.message;
         }
+    });
+}
+
+function logout() {
+    portal.signOut().then(function (portalInfo) {
+        document.cookie = "esri_auth=;path=/;expires=" + new Date(0).toUTCString();
+        location.reload();
     });
 }
 
@@ -430,7 +438,6 @@ function loadMap(webMapId) {
         });
         
         var infoTemplateContentDiv = dojo.byId("infoTemplateContent");
-        var outerHtml = infoTemplateContentDiv.outerHTML;
         var innerHtml = infoTemplateContentDiv.innerHTML;
         
         setInfoTemplate(
