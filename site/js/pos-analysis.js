@@ -4,15 +4,12 @@
 var configOptions = {
     webmapTitle: "Position Analysis Web Map",
     webmapExtent: "70.3685, 34.3767, 70.546, 34.4962",
-    portalUrl: "https://afmcomstaging.esri.com/arcgis",
+    portalUrl: location.protocol + "//" + location.host + "/arcgis",
     sharingPath: "/sharing/content/items",
     proxyRequired: true,
-    proxyUrl: "/proxy.jsp",
-    locateEventUrl: "https://afmcomstaging.esri.com/arcgis/rest/services/Tasks/PositionAnalysis/GPServer/LocateEvent",
     locateEventInputParameterName: "Observer_locations__bearing_and_distance_estimates_",
     locateEventOutputLinesParameterName: "Observation_lines",
     locateEventOutputAreaParameterName: "Estimated_area",
-    rangeRingsUrl: "https://afmcomstaging.esri.com/arcgis/rest/services/Tasks/PositionAnalysis/GPServer/RangeRings",
     rangeRingsInputRingCentersParameterName: "Range_Ring_Centers",
     rangeRingsInputRingCountParameterName: "Number_Of_Rings",
     rangeRingsInputRingIntervalParameterName: "Ring_Interval",
@@ -28,6 +25,9 @@ var configOptions = {
     titleNamesUppercase: [ "TITLE", "NAME", "LABEL" ],
     shapeNamesUppercase: [ "SHAPE", "GEOMETRY", "GEOM" ]
 }
+configOptions.proxyUrl = configOptions.portalUrl + "/sharing/proxy";
+configOptions.locateEventUrl = configOptions.portalUrl + "/rest/services/Tasks/PositionAnalysis/GPServer/LocateEvent";
+configOptions.rangeRingsUrl = configOptions.portalUrl + "/rest/services/Tasks/PositionAnalysis/GPServer/RangeRings";
 
 var LAYER_ID_KEY = "layerId";
 var LOCATE_EVENT_LOCATING_MESSAGE = "Locating event <img border='0' cellpadding='0' cellspacing='0' src='img/ajax-loader.gif' />";
