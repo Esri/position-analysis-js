@@ -4,15 +4,12 @@
 var configOptions = {
     webmapTitle: "Position Analysis Web Map",
     webmapExtent: "70.3685, 34.3767, 70.546, 34.4962",
-    portalUrl: "https://afmcomstaging.esri.com/arcgis",
+    portalUrl: location.protocol + "//" + location.host + "/arcgis",
     sharingPath: "/sharing/content/items",
     proxyRequired: true,
-    proxyUrl: "/proxy.jsp",
-    locateEventUrl: "https://afmcomstaging.esri.com/arcgis/rest/services/Tasks/PositionAnalysis/GPServer/LocateEvent",
     locateEventInputParameterName: "Observer_locations__bearing_and_distance_estimates_",
     locateEventOutputLinesParameterName: "Observation_lines",
     locateEventOutputAreaParameterName: "Estimated_area",
-    rangeRingsUrl: "https://afmcomstaging.esri.com/arcgis/rest/services/Tasks/PositionAnalysis/GPServer/RangeRings",
     rangeRingsInputRingCentersParameterName: "Range_Ring_Centers",
     rangeRingsInputRingCountParameterName: "Number_Of_Rings",
     rangeRingsInputRingIntervalParameterName: "Ring_Interval",
@@ -28,6 +25,9 @@ var configOptions = {
     titleNamesUppercase: [ "TITLE", "NAME", "LABEL" ],
     shapeNamesUppercase: [ "SHAPE", "GEOMETRY", "GEOM" ]
 }
+configOptions.proxyUrl = configOptions.portalUrl + "/sharing/proxy";
+configOptions.locateEventUrl = configOptions.portalUrl + "/rest/services/Tasks/PositionAnalysis/GPServer/LocateEvent";
+configOptions.rangeRingsUrl = configOptions.portalUrl + "/rest/services/Tasks/PositionAnalysis/GPServer/RangeRings";
 
 var LAYER_ID_KEY = "layerId";
 var LOCATE_EVENT_LOCATING_MESSAGE = "Locating event <img border='0' cellpadding='0' cellspacing='0' src='img/ajax-loader.gif' />";
@@ -120,6 +120,7 @@ function (BorderContainer, ContentPane, AccordionContainer, ToggleButton, Upload
     
     dojo.ready(function() {
         setVisibility("buttonSaveMap", false);
+        login();
     });
     
     if (USE_DOWNLOADIFY) {
@@ -160,46 +161,51 @@ function login() {
     var settingsStatusElement = dojo.byId("settingsStatus");
     settingsStatusElement.innerHTML = "Logging in...";
     portal.signIn().then(function (loggedInUser) {
-        settingsStatusElement.innerHTML = "Searching for " + configOptions.webmapTitle + "...";
         user = loggedInUser;
-        var queryParams = {
-            q: 'owner:"' + loggedInUser.username + '" AND title:"' + configOptions.webmapTitle + '" AND type:"Web Map"'
-        };
-        portal.queryItems(queryParams).then(function (queryResult) {
-            require(["dojo/request/xhr"], function (xhr) {
-                if (0 == queryResult.total) {
-                    var defaultWebMapJsonUrl = "defaultWebMapItemData.json";
-                    settingsStatusElement.innerHTML = "Reading default Web map...";
-                    //Read defaultWebMapItemData.json and create from that, or ask the user to choose a Web map to use.
-                    var xhrPromise = xhr(defaultWebMapJsonUrl, {
-                        handleAs: "json"
-                    });
-                    xhrPromise.then(function (itemData) {
-                        settingsStatusElement.innerHTML = "Read default Web map; saving to Portal...";
-                        var item = {
-                            itemType: "text",
-                            owner: loggedInUser.username,
-                            title: configOptions.webmapTitle,
-                            type: "Web Map",
-                            tags: [configOptions.webmapTitle],
-                            snippet: configOptions.webmapTitle,
-                            extent: configOptions.webmapExtent
-                        };
-                        saveWebMap(item, itemData, loggedInUser, function (webMapId) {
-                            loadMap(webMapId);
+        var query = esri.urlToObject(document.location.href).query;
+        if (query && query.webmap) {
+            loadMap(query.webmap);
+        } else {
+            settingsStatusElement.innerHTML = "Searching for " + configOptions.webmapTitle + "...";
+            var queryParams = {
+                q: 'owner:"' + loggedInUser.username + '" AND title:"' + configOptions.webmapTitle + '" AND type:"Web Map"'
+            };
+            portal.queryItems(queryParams).then(function (queryResult) {
+                require(["dojo/request/xhr"], function (xhr) {
+                    if (0 == queryResult.total) {
+                        var defaultWebMapJsonUrl = "defaultWebMapItemData.json";
+                        settingsStatusElement.innerHTML = "Reading default Web map...";
+                        //Read defaultWebMapItemData.json and create from that, or ask the user to choose a Web map to use.
+                        var xhrPromise = xhr(defaultWebMapJsonUrl, {
+                            handleAs: "json"
                         });
-                    }, function (error) {
-                        console.error("Couldn't get default Web map: " + error);
-                        settingsStatusElement.innerHTML = "Sorry, but we couldn't load the default Web map at "
-                            + defaultWebMapJsonUrl + ", and you don't have a Web map called \"" + configOptions.webmapTitle
-                            + "\".<br/><br/>You can try going to <a target='_blank' href='" + configOptions.portalUrl
-                            + "'>Portal for ArcGIS</a> and creating a Web map called \"" + configOptions.webmapTitle + "\".";
-                    });
-                } else {
-                    loadMap(queryResult.results[0].id);
-                }
+                        xhrPromise.then(function (itemData) {
+                            settingsStatusElement.innerHTML = "Read default Web map; saving to Portal...";
+                            var item = {
+                                itemType: "text",
+                                owner: loggedInUser.username,
+                                title: configOptions.webmapTitle,
+                                type: "Web Map",
+                                tags: [configOptions.webmapTitle],
+                                snippet: configOptions.webmapTitle,
+                                extent: configOptions.webmapExtent
+                            };
+                            saveWebMap(item, itemData, loggedInUser, function (webMapId) {
+                                loadMap(webMapId);
+                            });
+                        }, function (error) {
+                            console.error("Couldn't get default Web map: " + error);
+                            settingsStatusElement.innerHTML = "Sorry, but we couldn't load the default Web map at "
+                                + defaultWebMapJsonUrl + ", and you don't have a Web map called \"" + configOptions.webmapTitle
+                                + "\".<br/><br/>You can try going to <a target='_blank' href='" + configOptions.portalUrl
+                                + "'>Portal for ArcGIS</a> and creating a Web map called \"" + configOptions.webmapTitle + "\".";
+                        });
+                    } else {
+                        loadMap(queryResult.results[0].id);
+                    }
+                });
             });
-        });    
+        }
     }, function (error) {
         if ("ABORTED" == error.message) {
             //It's okay; the user cancelled the login
@@ -210,6 +216,13 @@ function login() {
             //portal URL or even a bad portal. Tell the user.
             settingsStatusElement.innerHTML = error.message;
         }
+    });
+}
+
+function logout() {
+    portal.signOut().then(function (portalInfo) {
+        document.cookie = "esri_auth=;path=/;expires=" + new Date(0).toUTCString();
+        location.reload();
     });
 }
 
@@ -430,7 +443,6 @@ function loadMap(webMapId) {
         });
         
         var infoTemplateContentDiv = dojo.byId("infoTemplateContent");
-        var outerHtml = infoTemplateContentDiv.outerHTML;
         var innerHtml = infoTemplateContentDiv.innerHTML;
         
         setInfoTemplate(

@@ -9,11 +9,11 @@
     <title>Position Analysis Web</title>
     
     <!-- Set the ArcGIS API for JavaScript CSS URLs for your portal or ArcGIS Online
-    <link rel="stylesheet" href="https://serverapi.arcgisonline.com/jsapi/arcgis/3.4/js/dojo/dijit/themes/claro/claro.css">
-    <link rel="stylesheet" href="https://serverapi.arcgisonline.com/jsapi/arcgis/3.4/js/esri/css/esri.css">
+    <link rel="stylesheet" href="//serverapi.arcgisonline.com/jsapi/arcgis/3.4/js/dojo/dijit/themes/claro/claro.css">
+    <link rel="stylesheet" href="//serverapi.arcgisonline.com/jsapi/arcgis/3.4/js/esri/css/esri.css">
     -->
-    <link rel="stylesheet" href="https://afmcomstaging.esri.com/arcgis/home/js/dojo/dijit/themes/claro/claro.css">
-    <link rel="stylesheet" href="https://afmcomstaging.esri.com/arcgis/home/js/esri/css/esri.css">
+    <link rel="stylesheet" href="/arcgis/home/js/dojo/dijit/themes/claro/claro.css">
+    <link rel="stylesheet" href="/arcgis/home/js/esri/css/esri.css">
     
     <style>
         html, body {
@@ -31,9 +31,9 @@
     <script>var dojoConfig = {parseOnLoad: true};</script>
     
     <!-- Set the ArcGIS API for JavaScript URL for your portal or ArcGIS Online
-    <script src="https://serverapi.arcgisonline.com/jsapi/arcgis/3.4/"></script>
+    <script src="//serverapi.arcgisonline.com/jsapi/arcgis/3.4/"></script>
     -->
-    <script src="https://afmcomstaging.esri.com/arcgis/jsapi/jsapi"></script>
+    <script src="/arcgis/jsapi/jsapi"></script>
     
     <script src="js/pos-analysis.js"></script>
     <script src="js/usng.js"></script>
@@ -130,14 +130,14 @@
             
             <!-- Login/account widget -->
             <div data-dojo-type="dijit/layout/ContentPane" id="paneSettings" name="paneSettings" title="Settings" selected="true">
-                <button type="button" id="buttonOpenLogin" name="buttonOpenLogin" data-dojo-type="dijit/form/Button">Login
-                    <script type="dojo/on" data-dojo-event="click" data-dojo-args="evt">
-                        login();
-                    </script>
-                </button><br/>
                 <button type="button" id="buttonSaveMap" name="buttonSaveMap" data-dojo-type="dijit/form/Button">Save Map
                     <script type="dojo/on" data-dojo-event="click" data-dojo-args="evt">
                         saveMap();
+                    </script>
+                </button><br/>
+                <button type="button" id="buttonOpenLogout" name="buttonOpenLogout" data-dojo-type="dijit/form/Button">Logout
+                    <script type="dojo/on" data-dojo-event="click" data-dojo-args="evt">
+                        logout();
                     </script>
                 </button>
                 <p id="settingsStatus"></p>
