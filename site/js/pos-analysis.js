@@ -445,60 +445,20 @@ function loadMap(webMapId) {
         var infoTemplateContentDiv = dojo.byId("infoTemplateContent");
         var innerHtml = infoTemplateContentDiv.innerHTML;
         
-        setInfoTemplate(
-                dojo.byId("infoTemplateContent").innerHTML,
-                true);
-        
         itemInfo = response.itemInfo;
         if (itemInfo && itemInfo.itemData && itemInfo.itemData.operationalLayers) {
-            require(["dijit/registry", "dojo/dom-construct", "dijit/InlineEditBox", "dijit/form/TextBox"], function (registry, domConstruct, InlineEditBox, TextBox) {
-                var layerListWidget = registry.byId("layerList");
-                var layerListDomElement = dojo.byId("layerList");
-                var layerContextMenu = registry.byId("layerContextMenu");
-                var layers = itemInfo.itemData.operationalLayers;
-                var layerSelectOptionsList = [];
-                var i;
-                for (i = 0; i < layers.length; i++) {
-                    var layer = layers[i];
-                    var br = domConstruct.create("br", null, layerListDomElement);
-                    var checkbox = new dijit.form.CheckBox({
-                        id: "checkLayers" + layer.id,
-                        name: "checkLayers",
-                        checked: layer.visibility,
-                        value: layer.id,
-                        onChange: function (checked) {
-                            layer.visibility = checked;
-                            var graphicsLayers = layer.featureCollection.layers;
-                            var j;
-                            for (j = 0; j < graphicsLayers.length; j++) {
-                                map.getLayer(graphicsLayers[j].id).setVisibility(checked);
-                            }
-                        }
-                    });
-                    layerListWidget.addChild(checkbox);
-                    var label = domConstruct.create("label", { id: "label" + checkbox.id, "for": checkbox.id, innerHTML: layer.title }, layerListDomElement);
-                    label.htmlFor = checkbox.id;
-                    var labelEditBox = new dijit.InlineEditBox({
-                        editor: TextBox,
-                        onChange: function (value) {
-                            layer.title = value;
-                        }
-                    }, label.id);
-                    layerContextMenu.bindDomNode(label.id);
-                    
-                    layerSelectOptionsList.push({
-                        label: layer.title,
-                        value: layer.id
-                    });
-                }
-                registry.byId("addShapesTargetLayer").addOption(layerSelectOptionsList);
-                registry.byId("locateEventTargetLayer").addOption(layerSelectOptionsList);
-                registry.byId("rangeRingsTargetLayer").addOption(layerSelectOptionsList);
-            });
+            if (0 == itemInfo.itemData.operationalLayers.length) {
+                createOperationalLayer("Map Notes", function (newLayer) {
+                    itemInfo.itemData.operationalLayers.push(newLayer);
+                    setupLayerCheckboxes(itemInfo.itemData.operationalLayers);
+                });                
+            } else {
+                setupLayerCheckboxes(itemInfo.itemData.operationalLayers);
+            }
+        } else {
+            settingsStatusElement.innerHTML = "Note: could not find Web map's operational layers. You might "
+                    + "not be able to add features to the map.";
         }
-        
-        setVisibility("buttonSaveMap", true);
-        settingsStatusElement.innerHTML = "";
     }, function(error){
         console.error('Create Map Failed: ' , dojo.toJson(error));
         //This might be a bad item ID or something else. Tell the user.
@@ -507,8 +467,91 @@ function loadMap(webMapId) {
     });
 }
 
-function saveMap() {
-    saveWebMap(itemInfo.item, itemInfo.itemData, user);
+function setupLayerCheckboxes(operationalLayers) {
+    require(["dijit/registry", "dojo/dom-construct", "dijit/InlineEditBox", "dijit/form/TextBox"], function (registry, domConstruct, InlineEditBox, TextBox) {
+        var layerListDomElement = dojo.byId("layerList");
+        var settingsStatusElement = dojo.byId("settingsStatus");
+        var layerListWidget = registry.byId("layerList");
+        var layerContextMenu = registry.byId("layerContextMenu");
+        var layerSelectOptionsList = [];
+        for (var i = 0; i < operationalLayers.length; i++) {
+            var layer = operationalLayers[i];
+            var br = domConstruct.create("br", null, layerListDomElement);
+            var checkbox = new dijit.form.CheckBox({
+                id: "checkLayers" + layer.id,
+                name: "checkLayers",
+                checked: layer.visibility,
+                value: layer.id,
+                onChange: function (checked) {
+                    layer.visibility = checked;
+                    var graphicsLayers = layer.featureCollection.layers;
+                    var j;
+                    for (j = 0; j < graphicsLayers.length; j++) {
+                        map.getLayer(graphicsLayers[j].id).setVisibility(checked);
+                    }
+                }
+            });
+            layerListWidget.addChild(checkbox);
+            var label = domConstruct.create("label", { id: "label" + checkbox.id, "for": checkbox.id, innerHTML: layer.title }, layerListDomElement);
+            label.htmlFor = checkbox.id;
+            var labelEditBox = new dijit.InlineEditBox({
+                editor: TextBox,
+                onChange: function (value) {
+                    layer.title = value;
+                }
+            }, label.id);
+            layerContextMenu.bindDomNode(label.id);
+            
+            layerSelectOptionsList.push({
+                label: layer.title,
+                value: layer.id
+            });
+        }
+        registry.byId("addShapesTargetLayer").addOption(layerSelectOptionsList);
+        registry.byId("locateEventTargetLayer").addOption(layerSelectOptionsList);
+        registry.byId("rangeRingsTargetLayer").addOption(layerSelectOptionsList);
+        
+        setInfoTemplate(dojo.byId("infoTemplateContent").innerHTML, true);
+        
+        setVisibility("buttonSaveMap", true);
+        settingsStatusElement.innerHTML = "";
+    });
+}
+
+/**
+ * Creates an operational layer, and adds a corresponding GraphicsLayer to the map.
+ * The callback's parameter is the operational layer JSON object.
+ */
+function createOperationalLayer(name, callback) {
+    require(["dojo/request/xhr", "esri/layers/GraphicsLayer", "esri/renderers/jsonUtils", "dojo/_base/lang"], function (xhr, GraphicsLayer, jsonUtils, lang) {
+        xhr("defaultWebMapItemData.json", {
+            handleAs: "json"
+        }).then(function (itemData) {
+            var layer = 0 < itemData.operationalLayers.length ? itemData.operationalLayers[0] : null;
+            if (layer) {
+                var guid = randomUUID();
+                layer.id = "mapNotes_" + guid;
+                for (var i = 0; i < layer.featureCollection.layers.length; i++) {
+                    layer.featureCollection.layers[i].id = "mapNotes_" + guid + "_" + i;
+                    var graphicsLayer = new GraphicsLayer({
+                        id: layer.featureCollection.layers[i].id
+                    });
+                    var rendererJson = layer.featureCollection.layers[i].layerDefinition.drawingInfo.renderer;
+                    var renderer = jsonUtils.fromJson(lang.clone(rendererJson));
+                    graphicsLayer.setRenderer(renderer);
+                    map.addLayer(graphicsLayer);
+                }
+            }
+            callback(layer);
+        });
+    });
+}
+
+/**
+ * Callback is optional and takes the Web map ID as a parameter.
+ */
+function saveMap(callback) {
+    saveWebMap(itemInfo.item, itemInfo.itemData, user, callback);
 }
 
 /**
@@ -1009,4 +1052,14 @@ function completeDownload() {
             });
         });
     }
+}
+
+function randomUUID() {
+    var s4 = function () {
+        return Math.floor((1 + Math.random()) * 0x10000)
+                .toString(16)
+                .substring(1);
+    };
+    return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+            s4() + '-' + s4() + s4() + s4();
 }
