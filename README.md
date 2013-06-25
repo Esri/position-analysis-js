@@ -86,7 +86,16 @@ links. If using Portal for ArcGIS, you should use the ArcGIS API for JavaScript 
 
 ## Usage
 
-Navigate to the application in a Web browser. In the Settings tab, login to Portal for ArcGIS. When the map
+There are three main ways of launching the application:
+
+1. Load the application URL in a browser with no parameters.
+2. Load the application URL in a browser with a "webmap" parameter. The "webmap" parameter value should
+   be a Web map ID for the map you want to view in the application.
+3. Set up the application as a Portal Web template, as described in the help for [creating Web application
+   templates](http://resources.arcgis.com/en/help/arcgisonline/index.html#/Creating_web_application_templates/010q00000072000000/).
+
+The application will attempt to login to the Portal. If you are not currently logged in, the application
+redirects you to the Portal login page. After logging in, when the map
 appears, you can use all the application's tools in the following tabs:
 
 ### Add Features
