@@ -11,6 +11,9 @@ in order to set up the application.
 You must deploy the Web application on a HTTPS-enabled Web server, or else the login to Portal or ArcGIS 
 Online will not work.
 
+You must add to your Web server a MIME type for JSON. The extension is .json and the MIME type is
+application/json.
+
 If using [the ArcGIS proxy page](http://developers.arcgis.com/en/javascript/jshelp/ags_proxy.html),
 and if the Portal certificate is self-signed or issued by a non-standard certificate authority (CA), you
 have to configure the Web server that is hosting the proxy page to trust the certificate and/or CA. The
