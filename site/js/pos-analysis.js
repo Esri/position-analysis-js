@@ -7,6 +7,7 @@ var configOptions = {
     portalUrl: location.protocol + "//" + location.host + "/arcgis",
     sharingPath: "/sharing/content/items",
     proxyRequired: true,
+    labelColor: "#738C3D",
     locateEventInputParameterName: "Observer_locations__bearing_and_distance_estimates_",
     locateEventOutputLinesParameterName: "Observation_lines",
     locateEventOutputAreaParameterName: "Estimated_area",
@@ -28,6 +29,7 @@ var configOptions = {
 configOptions.proxyUrl = configOptions.portalUrl + "/sharing/proxy";
 configOptions.locateEventUrl = configOptions.portalUrl + "/rest/services/Tasks/PositionAnalysis/GPServer/LocateEvent";
 configOptions.rangeRingsUrl = configOptions.portalUrl + "/rest/services/Tasks/PositionAnalysis/GPServer/RangeRings";
+configOptions.geometryServiceUrl = configOptions.portalUrl + "/rest/services/Utilities/Geometry/GeometryServer";
 
 var LAYER_ID_KEY = "layerId";
 var LOCATE_EVENT_LOCATING_MESSAGE = "Locating event <img border='0' cellpadding='0' cellspacing='0' src='img/ajax-loader.gif' />";
@@ -43,6 +45,8 @@ var gpLocateEvent;
 var gpRangeRings;
 var connectedLayers = [];
 var addedGraphics = [];
+var geometryService;
+var labelFont;
 
 /**
  * Adapted from http://stackoverflow.com/questions/5574842/best-way-to-check-for-ie-less-than-9-in-javascript-without-library
@@ -82,11 +86,14 @@ require([
     "esri/arcgis/utils",
     "esri/toolbars/draw",
     "esri/tasks/Geoprocessor",
+    "esri/symbols/Font",
     "dojo/on",
     "dojo/json",
     "dojo/domReady!"],
-function (BorderContainer, ContentPane, AccordionContainer, ToggleButton, Uploader, Flash, NumberTextBox, CheckBox, Select, InlineEditBox, NumberSpinner, Menu, MenuItem, Map, ArcGISTiledMapServiceLayer, IdentityManager, Portal, utils, Draw, Geoprocessor, on, JSON) {
+function (BorderContainer, ContentPane, AccordionContainer, ToggleButton, Uploader, Flash, NumberTextBox, CheckBox, Select, InlineEditBox, NumberSpinner, Menu, MenuItem, Map, ArcGISTiledMapServiceLayer, IdentityManager, Portal, utils, Draw, Geoprocessor, Font, on, JSON) {
     console.log("Welcome to Position Analysis Web, using Dojo version " + dojo.version);
+    
+    labelFont = new Font().setFamily("Arial").setSize("13pt");
     
     if (9 <= ieVersion()) {
         dojo.byId("csvUploadMessage").innerHTML = "Upload CSV here:";
@@ -161,6 +168,9 @@ function login() {
     var settingsStatusElement = dojo.byId("settingsStatus");
     settingsStatusElement.innerHTML = "Logging in...";
     portal.signIn().then(function (loggedInUser) {
+        require(["esri/tasks/GeometryService"], function (GeometryService) {
+            geometryService = new GeometryService(configOptions.geometryServiceUrl);
+        });
         user = loggedInUser;
         var query = esri.urlToObject(document.location.href).query;
         if (query && query.webmap) {
@@ -287,7 +297,7 @@ function deleteShape(objectId, hidePopup) {
     var graphicsLayerId = graphicsLayerInput.value;
     var layer = map.getLayer(graphicsLayerId);
     for (var graphicIndex = 0; graphicIndex < layer.graphics.length; graphicIndex++) {
-        if (layer.graphics[graphicIndex].attributes["OBJECTID"] == objectId) {
+        if (layer.graphics[graphicIndex].attributes && layer.graphics[graphicIndex].attributes["OBJECTID"] == objectId) {
             //Remove from addedGraphics
             var addedGraphicsIndex = addedGraphics.indexOf(layer.graphics[graphicIndex]);
             if (0 <= addedGraphicsIndex) {
@@ -300,9 +310,9 @@ function deleteShape(objectId, hidePopup) {
     }
     
     //Delete from itemInfo object, which will get saved to the Web map when saveWebMap is called
-    var opLayerIndex;
+    var opLayerId;
     var found = false;
-    for (opLayerIndex = 0; opLayerIndex < itemInfo.itemData.operationalLayers.length && !found; opLayerIndex++) {
+    for (var opLayerIndex = 0; opLayerIndex < itemInfo.itemData.operationalLayers.length && !found; opLayerIndex++) {
         var featureCollection = itemInfo.itemData.operationalLayers[opLayerIndex].featureCollection;
         var layerIndex;
         for (layerIndex = 0; layerIndex < featureCollection.layers.length && !found; layerIndex++) {
@@ -313,11 +323,21 @@ function deleteShape(objectId, hidePopup) {
                 for (featureIndex = 0; featureIndex < features.length && !found; featureIndex++) {
                     if (features[featureIndex].attributes["OBJECTID"] == objectId) {
                         features.splice(featureIndex, 1);
+                        opLayerId = itemInfo.itemData.operationalLayers[opLayerIndex].id;
                         found = true;
                     }
                 }
             }
         }
+    }
+    
+    if (opLayerId) {
+        require(["dijit/registry"], function (registry) {
+            if (registry.byId("labelFeaturesMenuItem").checked) {
+                labelLayerChecked(opLayerId, false);
+                labelLayerChecked(opLayerId, true);
+            }
+        });
     }
     
     if (map.infoWindow.features.length > 1) {
@@ -734,13 +754,19 @@ function calculateRangeRings() {
                 if ("esriJobFailed" == jobInfo.jobStatus) {
                     rangeRingsStatusElement.innerHTML = "Could not calculate range rings";
                 } else {
-                    gpRangeRings.getResultData(jobInfo.jobId, configOptions.rangeRingsOutputRadialsParameterName)
-                    .then(function (resultData) {
-                        gpHandleLines(resultData, lineGraphicsLayer);
-                    });
-                    gpRangeRings.getResultData(jobInfo.jobId, configOptions.rangeRingsOutputRingsParameterName)
-                    .then(function (resultData) {
-                        gpHandleLines(resultData, lineGraphicsLayer);
+                    require(["dojo/promise/all", "dijit/registry"], function (all, registry) {
+                        all([
+                            gpRangeRings.getResultData(jobInfo.jobId, configOptions.rangeRingsOutputRingsParameterName),
+                            gpRangeRings.getResultData(jobInfo.jobId, configOptions.rangeRingsOutputRadialsParameterName)                            
+                        ]).then(function (results) {
+                            gpHandleLines(results[0], lineGraphicsLayer);
+                            gpHandleLines(results[1], lineGraphicsLayer);
+                            
+                            if (registry.byId("labelFeaturesMenuItem").checked) {
+                                labelLayerChecked(targetLayerName, false);
+                                labelLayerChecked(targetLayerName, true);
+                            }
+                        });
                     });
                 }
             }, rangeRingsStatus);
@@ -778,8 +804,7 @@ function locateEvent() {
         var webMapFeatureSet;
         var pointGraphicsLayer, lineGraphicsLayer, areaGraphicsLayer;
         var opLayers = this.itemInfo.itemData.operationalLayers;
-        var i;
-        for (i = 0; i < opLayers.length; i++) {
+        for (var i = 0; i < opLayers.length; i++) {
             if (opLayers[i].id == targetLayerName) {
                 //Get sublayers
                 var sublayers = opLayers[i].featureCollection.layers;
@@ -810,18 +835,24 @@ function locateEvent() {
                 if ("esriJobFailed" == jobInfo.jobStatus) {
                     locateEventStatusElement.innerHTML = "Could not locate";
                 } else {
-                    gpLocateEvent.getResultData(jobInfo.jobId, configOptions.locateEventOutputLinesParameterName)
-                    .then(function (resultData) {
-                        gpHandleLines(resultData, lineGraphicsLayer);
-                    });
-                    gpLocateEvent.getResultData(jobInfo.jobId, configOptions.locateEventOutputAreaParameterName)
-                    .then(function (resultData) {
-                        gpHandleAreas(resultData, areaGraphicsLayer);
+                    require(["dojo/promise/all", "dijit/registry"], function (all, registry) {
+                        all([
+                            gpLocateEvent.getResultData(jobInfo.jobId, configOptions.locateEventOutputLinesParameterName),
+                            gpLocateEvent.getResultData(jobInfo.jobId, configOptions.locateEventOutputAreaParameterName)
+                        ]).then(function (results) {
+                            gpHandleLines(results[0], lineGraphicsLayer);
+                            gpHandleAreas(results[1], areaGraphicsLayer);
+                            
+                            if (registry.byId("labelFeaturesMenuItem").checked) {
+                                labelLayerChecked(targetLayerName, false);
+                                labelLayerChecked(targetLayerName, true);
+                            }
+                        });
                     });
                 }
             }, locateEventStatus);
         } else {
-            locateEventStatusElement.innerHTML = "Could not locate";
+            locateEventStatusElement.innerHTML = "Could not locate event. Do all of the points in the specified layer have an azimuth and a distance?";
         }
     });
 }
@@ -906,6 +937,85 @@ function addGraphic(graphicsLayer, graphic) {
     addedGraphics.push(graphic);
 }
 
+function getLayerIdByMenuItem(menuItem) {
+    return dojo.byId(menuItem.getParent().currentTarget.htmlFor).value;
+}
+
+function labelLayerChecked(layerId, checked) {
+    var opLayer = getOperationalLayerById(layerId);
+    if (opLayer) {
+        require(["esri/graphic", "esri/symbols/TextSymbol", "esri/geometry/Point"], function (Graphic, TextSymbol, Point) {
+            var sublayers = opLayer.featureCollection.layers;
+            for (var i = 0; i < sublayers.length; i++) {
+                var graphicsLayer = map.getLayer(sublayers[i].id);
+                var graphicsLayerInitialLength = graphicsLayer.graphics.length;
+                var graphicsToRemove = [];
+                for (var graphicIndex = 0; graphicIndex < graphicsLayerInitialLength; graphicIndex++) {
+                    var graphic = graphicsLayer.graphics[graphicIndex];
+                    if (checked && !(graphic.symbol && "textsymbol" == graphic.symbol.type)) {
+                        //If we're turning on labels, label everything except existing labels (there probably aren't any)
+                        var text;
+                        switch (graphic.geometry.type) {
+                            case "point": {
+                                if (graphic.attributes.TITLE) {
+                                    text = graphic.attributes.TITLE;
+                                }
+                                graphicsLayer.add(new Graphic(graphic.geometry, new TextSymbol(text, labelFont, new dojo.Color(configOptions.labelColor))));
+                                break;
+                            }
+                            case "polyline": {
+                                if (graphic.attributes.AZIMUTH) {
+                                    //Bearing line: use azimuth for text
+                                    text = graphic.attributes.AZIMUTH + "°";
+                                } else if (graphic.attributes.RANGE) {
+                                    //Range ring: use range for text
+                                    text = graphic.attributes.RANGE + "m";
+                                }
+                                if (text) {
+                                    //Use middle point
+                                    if (0 < graphic.geometry.paths.length) {
+                                        var path = graphic.geometry.paths[0];
+                                        if (path && 0 < path.length) {
+                                            var geom;
+                                            if (2 < path.length) {
+                                                geom = new Point(path[Math.floor(path.length / 2)], graphic.geometry.spatialReference);
+                                            } else {
+                                                geom = new Point((path[0][0] + path[1][0]) / 2, (path[0][1] + path[1][1]) / 2, graphic.geometry.spatialReference);
+                                            }
+                                            var textSymbol = new TextSymbol(text, labelFont, new dojo.Color(configOptions.labelColor));
+                                            //Clever hack: the range rings have many more points than the bearing lines typically, so offset them to avoid
+                                            //label conflicts.
+                                            if (100 < path.length) {
+                                                textSymbol.xoffset = 30;
+                                                textSymbol.yoffset = -15;
+                                            }
+                                            graphicsLayer.add(new Graphic(geom, textSymbol));
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                            case "polygon": {
+                                var theText = "Event";
+                                var theGraphicsLayer = graphicsLayer;
+                                geometryService.labelPoints([ graphic.geometry ], function (labelPoints) {
+                                    theGraphicsLayer.add(new Graphic(labelPoints[0], new TextSymbol(theText, labelFont, new dojo.Color(configOptions.labelColor))));
+                                });
+                                break;
+                            }
+                        }
+                    } else if (!checked && graphic.symbol && "textsymbol" == graphic.symbol.type) {
+                        graphicsToRemove.push(graphic);
+                    }
+                }
+                for (var removeIndex = 0; removeIndex < graphicsToRemove.length; removeIndex++) {
+                    graphicsLayer.remove(graphicsToRemove[removeIndex]);
+                }
+            }
+        });
+    }
+}
+
 function downloadLayer(menuItem) {
     var str = layerToJson(menuItem);
     var uri = 'data:text/csv;charset=utf-8,' + str;
@@ -919,98 +1029,106 @@ function downloadLayer(menuItem) {
     document.body.removeChild(downloadLink);
 }
 
-function layerToJson(menuItem) {
-    var layerId = dojo.byId(menuItem.getParent().currentTarget.htmlFor).value;
+function getOperationalLayerById(layerId) {
     var opLayers = itemInfo.itemData.operationalLayers;
     for (var i = 0; i < opLayers.length; i++) {
         if (opLayers[i].id == layerId) {
-            //Get sublayers
-            var sublayers = opLayers[i].featureCollection.layers;
-            var fieldNames = [];
-            var allFeatures = [];
-            for (var sublayerIndex = 0; sublayerIndex < sublayers.length; sublayerIndex++) {
-                var sublayer = sublayers[sublayerIndex];
-                var fields = sublayer.layerDefinition.fields;
-                for (var fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
-                    var fieldName = fields[fieldIndex].name;
-                    if (-1 >= fieldNames.indexOf(fieldName)) {
-                        //Skip OBJECTID, because there will be duplicates between point, line, and polygon.
-                        if ("OBJECTID" != fieldName) {
-                            fieldNames.push(fieldName);
-                        }
+            return opLayers[i];
+        }
+    }
+    return null;
+}
+
+function layerToJson(menuItem) {
+    var layerId = getLayerIdByMenuItem(menuItem);
+    var opLayer = getOperationalLayerById(layerId);
+    if (null != opLayer) {
+        //Get sublayers
+        var sublayers = opLayer.featureCollection.layers;
+        var fieldNames = [];
+        var allFeatures = [];
+        for (var sublayerIndex = 0; sublayerIndex < sublayers.length; sublayerIndex++) {
+            var sublayer = sublayers[sublayerIndex];
+            var fields = sublayer.layerDefinition.fields;
+            for (var fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
+                var fieldName = fields[fieldIndex].name;
+                if (-1 >= fieldNames.indexOf(fieldName)) {
+                    //Skip OBJECTID, because there will be duplicates between point, line, and polygon.
+                    if ("OBJECTID" != fieldName) {
+                        fieldNames.push(fieldName);
                     }
                 }
-                allFeatures = allFeatures.concat(sublayer.featureSet.features);
             }
-            
-            var str = "";
-            var fieldSep = "";
-            var lineSep = "";
+            allFeatures = allFeatures.concat(sublayer.featureSet.features);
+        }
+        
+        var str = "";
+        var fieldSep = "";
+        var lineSep = "";
+        for (var fieldIndex = 0; fieldIndex < fieldNames.length; fieldIndex++) {
+            str += fieldSep;
+            fieldSep = ",";
+            lineSep = "\n";
+            var needsCsvQuotes = isNeedsCsvQuotes(fieldNames[fieldIndex]);
+            if (needsCsvQuotes) {
+                str += "\"";
+            }
+            str += escapeCsv(fieldNames[fieldIndex]);
+            if (needsCsvQuotes) {
+                str += "\"";
+            }
+        }
+        str += fieldSep + "GEOMETRY";
+        fieldSep = ",";
+        str += fieldSep + "LATITUDE" + fieldSep + "LONGITUDE" + fieldSep + "MGRS";
+        for (var featureIndex = 0; featureIndex < allFeatures.length; featureIndex++) {
+            str += lineSep;
+            lineSep = "\n";
+            fieldSep = "";
+            var feature = allFeatures[featureIndex];
             for (var fieldIndex = 0; fieldIndex < fieldNames.length; fieldIndex++) {
                 str += fieldSep;
                 fieldSep = ",";
-                lineSep = "\n";
-                var needsCsvQuotes = isNeedsCsvQuotes(fieldNames[fieldIndex]);
-                if (needsCsvQuotes) {
-                    str += "\"";
-                }
-                str += escapeCsv(fieldNames[fieldIndex]);
-                if (needsCsvQuotes) {
-                    str += "\"";
-                }
-            }
-            str += fieldSep + "GEOMETRY";
-            fieldSep = ",";
-            str += fieldSep + "LATITUDE" + fieldSep + "LONGITUDE" + fieldSep + "MGRS";
-            for (var featureIndex = 0; featureIndex < allFeatures.length; featureIndex++) {
-                str += lineSep;
-                lineSep = "\n";
-                fieldSep = "";
-                var feature = allFeatures[featureIndex];
-                for (var fieldIndex = 0; fieldIndex < fieldNames.length; fieldIndex++) {
-                    str += fieldSep;
-                    fieldSep = ",";
-                    var value = feature.attributes[fieldNames[fieldIndex]];
-                    if (undefined != value) {
-                        //Make sure "true" and "false" stay that way in the CSV
-                        if (true === value) {
-                            value = "true";
-                        } else if (false === value) {
-                            value = "false";
-                        }
-                        var needsCsvQuotes = isNeedsCsvQuotes(value);
-                        if (needsCsvQuotes) {
-                            str += "\"";
-                        }
-                        str += escapeCsv(value);
-                        if (needsCsvQuotes) {
-                            str += "\"";
-                        }
+                var value = feature.attributes[fieldNames[fieldIndex]];
+                if (undefined != value) {
+                    //Make sure "true" and "false" stay that way in the CSV
+                    if (true === value) {
+                        value = "true";
+                    } else if (false === value) {
+                        value = "false";
                     }
-                }
-                
-                str += fieldSep;
-                fieldSep = ",";
-                var geomGcs = esri.geometry.webMercatorToGeographic(esri.geometry.fromJson(feature.geometry));
-                var geomGcsJson = geomGcs.toJson();
-                var geometryString = JSON.stringify(geomGcsJson);
-                var needsCsvQuotes = isNeedsCsvQuotes(geometryString);
-                if (needsCsvQuotes) {
-                    str += "\"";
-                }
-                str += escapeCsv(geometryString);
-                if (needsCsvQuotes) {
-                    str += "\"";
-                }
-                
-                if ("point" == geomGcs.type) {
-                    var mgrs = org.mymanatee.common.usng.LLtoMGRS(geomGcs.y, geomGcs.x, 5);
-                    str += fieldSep + geomGcs.y + fieldSep + geomGcs.x + fieldSep + mgrs;
+                    var needsCsvQuotes = isNeedsCsvQuotes(value);
+                    if (needsCsvQuotes) {
+                        str += "\"";
+                    }
+                    str += escapeCsv(value);
+                    if (needsCsvQuotes) {
+                        str += "\"";
+                    }
                 }
             }
             
-            return str;
+            str += fieldSep;
+            fieldSep = ",";
+            var geomGcs = esri.geometry.webMercatorToGeographic(esri.geometry.fromJson(feature.geometry));
+            var geomGcsJson = geomGcs.toJson();
+            var geometryString = JSON.stringify(geomGcsJson);
+            var needsCsvQuotes = isNeedsCsvQuotes(geometryString);
+            if (needsCsvQuotes) {
+                str += "\"";
+            }
+            str += escapeCsv(geometryString);
+            if (needsCsvQuotes) {
+                str += "\"";
+            }
+            
+            if ("point" == geomGcs.type) {
+                var mgrs = org.mymanatee.common.usng.LLtoMGRS(geomGcs.y, geomGcs.x, 5);
+                str += fieldSep + geomGcs.y + fieldSep + geomGcs.x + fieldSep + mgrs;
+            }
         }
+        
+        return str;
     }
     return "";
 }

@@ -43,6 +43,7 @@ variables at the top of the file as necessary:
                  [the proxy page documentation](http://developers.arcgis.com/en/javascript/jshelp/ags_proxy.html)
                  for further details.
 - proxyUrl: the relative or absolute URL to the proxy page.
+- labelColor: the label color, expressed as a hex string (e.g. "#738C3D").
 - locateEventUrl: the URL of the geoprocessing task used by the Locate Event tool.
 - locateEventInputParameterName: the feature set input parameter name for the Locate Event tool.
 - locateEventOutputLinesParameterName: the name of the lines output parameter for the Locate Event tool.
@@ -79,6 +80,7 @@ variables at the top of the file as necessary:
                        the field names in the CSV may be in any case. The shape string should have the
                        format of a JSON point, polyline, or polygon string as specified in [the ArcGIS
                        REST API](http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Geometry_Objects/02r3000000n1000000/).
+- geometryServiceUrl: the URL of the geometry service used by the application.
 
 
 Open index.html and edit the ArcGIS API for JavaScript URLs, including the JavaScript link and the CSS
@@ -165,6 +167,7 @@ Right-click a layer name to access some actions for that layer:
                   Point geometries also appear as latitude/longitude and MGRS. This CSV file is the type of
                   file expected by the Add Features tool.
 - Remove Layer: not yet implemented.
+- Label Features: this action turns on and off labeling for the features in this layer.
 
 ## Licensing
 
