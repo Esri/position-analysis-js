@@ -160,6 +160,8 @@
             onClick:function(){downloadLayer(this);}"><span id="exportDownloadify">Download Layer</span></div>
         <div data-dojo-type="dijit/MenuItem" data-dojo-props="iconClass:'dijitIconDelete',
             onClick:function(){alert('TODO not actually removing anything, just a test!')}">Remove Layer</div>
+        <div data-dojo-type="dijit/CheckedMenuItem" id="labelFeaturesMenuItem"
+            data-dojo-props="onChange:function(checked){labelLayerChecked(getLayerIdByMenuItem(this), checked);}">Label Features</div>
     </div>
     
     <!-- Popup InfoTemplate content (hidden; only innerHTML of this div is used; search for dojo.byId("infoTemplateContent") in JavaScript code for details) -->
