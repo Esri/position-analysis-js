@@ -659,7 +659,7 @@ function addShape(layerId, geom, centerAtShape, title, azimuth, distance) {
             var j;
             for (j = 0; j < itemInfo.itemData.operationalLayers[i].featureCollection.layers.length; j++) {
                 var layerGeomType = itemInfo.itemData.operationalLayers[i].featureCollection.layers[j].featureSet.geometryType;
-                if (layerGeomType.startsWith("esriGeometry")) {
+                if (0 === layerGeomType.indexOf("esriGeometry")) {
                     layerGeomType = layerGeomType.substr("esriGeometry".length);
                 }
                 if (layerGeomType.toLowerCase() == geom.type) {
