@@ -1,7 +1,15 @@
 position-analysis-js
 ====================
 
-Position Analysis Web template
+The Position Analysis Web template uses ArcGIS to perform position analysis in a browser. Users can select a variety of functions:
+
+- Add features to the map via manual data entry or CSV file upload.
+- Locate an event, using point features as observations.
+- Calculate range rings for point features.
+- Download features as a CSV file.
+- Save features to a Web map.
+
+![Image of Position Analysis Web]( ScreenShot.png "position-analysis-js")
 
 ## Setup
 
