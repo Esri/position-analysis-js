@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<!--
+ Copyright 2013 Esri
+ 
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ 
+ http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<!-- 
+ Build.xml
+ Description: Ant script used to deploy the application and generate user documentation
+ Requirements: Java JRE, Ant
+ -->
+
+<project name="position-analysis-js" basedir="." default="show-usage">
+
+    <target name="show-usage" description="Prints usage help for each available Ant target.">
+        <echo>Ant targets:
+- show-usage: prints the help you are now reading.
+
+- deploy: deploys the Web application by copying it to a
+          directory. The default directory is
+          C:\inetpub\wwwroot\posanalysis. If you would
+          like to choose a different directory, specify
+          it on the Ant command line:
+          
+          ant deploy -Ddir=C:\path\to\app\directory
+
+- generate-doc: generates the user documentation from
+                the contents of README.md. This will
+                overwrite the user documentation in
+                the Web application!</echo>
+    </target>
+    
+    <target name="deploy" description="Deploys the Web application by copying it to a directory.">
+        <condition property="deploy.dir" value="${deploy.dir}" else="C:\\inetpub\\wwwroot\\posanalysis">
+            <isset property="deploy.dir" />
+        </condition>
+        <copy todir="${deploy.dir}" overwrite="true">
+            <fileset dir="site" />
+        </copy>
+    </target>
+    
+    <target name="generate-doc" description="Generates the user documentation from the contents of README.md">
+        <taskdef name="mdtohtml" classname="com.esri.wdc.mdtohtml.MDtoHTMLTask" classpath="ant-tasks/MDtoHTML.jar" />
+        <mdtohtml md="README.md" template="readme-template.html" out="site/readme.html" />
+    </target>
+
+</project>
