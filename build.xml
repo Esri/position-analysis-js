@@ -22,8 +22,8 @@
 
 <project name="position-analysis-js" basedir="." default="show-usage">
 
-    <target name="show-usage" description="Prints usage help for each available Ant task.">
-        <echo>Ant tasks:
+    <target name="show-usage" description="Prints usage help for each available Ant target.">
+        <echo>Ant targets:
 - show-usage: prints the help you are now reading.
 
 - deploy: deploys the Web application by copying it to a
@@ -50,7 +50,7 @@
     </target>
     
     <target name="generate-doc" description="Generates the user documentation from the contents of README.md">
-        <echo>The generate-doc task is not yet implemented. Check back soon.</echo>
+        <echo>The generate-doc target is not yet implemented. Check back soon.</echo>
     </target>
 
 </project>
