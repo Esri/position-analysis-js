@@ -41,16 +41,17 @@
     </target>
     
     <target name="deploy" description="Deploys the Web application by copying it to a directory.">
-        <condition property="dir" value="${dir}" else="C:\\inetpub\\wwwroot\\posanalysis">
-            <isset property="dir" />
+        <condition property="deploy.dir" value="${deploy.dir}" else="C:\\inetpub\\wwwroot\\posanalysis">
+            <isset property="deploy.dir" />
         </condition>
-        <copy todir="${dir}" overwrite="true">
+        <copy todir="${deploy.dir}" overwrite="true">
             <fileset dir="site" />
         </copy>
     </target>
     
     <target name="generate-doc" description="Generates the user documentation from the contents of README.md">
-        <echo>The generate-doc target is not yet implemented. Check back soon.</echo>
+        <taskdef name="mdtohtml" classname="com.esri.wdc.mdtohtml.MDtoHTMLTask" classpath="ant-tasks/MDtoHTML.jar" />
+        <mdtohtml md="README.md" template="readme-template.html" out="site/readme.html" />
     </target>
 
 </project>
