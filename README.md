@@ -146,3 +146,6 @@ Portions of this code use third-party libraries:
 - The Ant build file uses markdown4j, which is licensed under the BSD 3-Clause License.
 
 See [license-ThirdParty.txt](license-ThirdParty.txt) for the details of these licenses.
+
+[](Esri Tags: ArcGIS Defense and Intelligence Military Defense Portal HTML)
+[](Esri Language: JavaScript)
