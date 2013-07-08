@@ -82,11 +82,16 @@ Right-click a layer name to access some actions for that layer:
 
 The Position Analysis Web template uses Portal for ArcGIS 10.2+ or ArcGIS Online. You'll need the portal URL in order to set up the application.
 
-You must deploy the Web application on a HTTPS-enabled Web server, or else the login to Portal or ArcGIS  Online will not work.
+You must deploy the Web application on a HTTPS-enabled Web server, or else the login to Portal or ArcGIS Online will not work.
 
 You must add to your Web server a MIME type for JSON. The extension is .json and the MIME type is application/json.
 
-If using [the ArcGIS proxy page](http://developers.arcgis.com/en/javascript/jshelp/ags_proxy.html), and if the Portal certificate is self-signed or issued by a non-standard certificate authority (CA), you have to configure the Web server that is hosting the proxy page to trust the certificate and/or CA. The directions for this vary based on which proxy page you choose--ASP.NET, Java, or PHP. (For example, for the Java proxy page, you must use the JDK's keytool to add the CA root certificate to the trust store of the JRE that runs your Web server.) Directions are available on the Web for various platforms and Web servers.
+The file [site/defaultWebMapItem.json](site/defaultWebMapItem.json) sets up a Web map for the user when no webmapId parameter is specified and the user has no Web map called "Position Analysis Web Map." In defaultWebMapItem.json, there are various references to absolute URLs that you may need to adjust:
+
+- Two references to marker symbol images on ArcGIS.com. If you are using Portal for ArcGIS instead of ArcGIS Online, replace both instances of "static.arcgis.com/images" with "<portal hostname>/arcgis/portalimages", substituting your portal's hostname.
+- A reference to a tiled map service at http://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer . If you want to use a different tiled map service, replace the URL.
+
+It is recommended to use the [the ArcGIS proxy page](http://developers.arcgis.com/en/javascript/jshelp/ags_proxy.html) provided by the portal you're using (i.e. your instance of Portal for ArcGIS, or ArcGIS Online). If you do, you will not need to change the proxyUrl variable. If you use a different proxy page, and if the Portal certificate is self-signed or issued by a non-standard certificate authority (CA), you have to configure the Web server that is hosting the proxy page to trust the certificate and/or CA. The directions for this vary based on which proxy page you choose--ASP.NET, Java, or PHP. (For example, for the Java proxy page, you must use the JDK's keytool to add the CA root certificate to the trust store of the JRE that runs your Web server.) Directions are available on the Web for various platforms and Web servers.
 
 You need to publish the Locate Event model from the [Position Analysis Tools toolbox](https://github.com/Esri/defense-and-intel-analysis-toolbox/blob/master/toolboxes/Position%20Analysis%20Tools.tbx) as a geoprocessing service in ArcGIS 10.1 (or later) for Server. The model requires no data, so simply run it in ArcMap and publish the result. You'll use the URL of the Locate Event task as the locateEventUrl configuration variable mentioned below.
 
@@ -97,7 +102,7 @@ Deploy the [site](site) directory as a Web application in your HTTPS-enabled Web
 - portalUrl: the Portal for ArcGIS URL.
 - sharingPath: a relative path such that portalUrl + sharingPath is the full sharing URL for the portal.
 - proxyRequired: true if the ArcGIS API for JavaScript needs to use a proxy and false otherwise. A proxy is required when hosting the application on a different domain than Portal for ArcGIS and may be required in other situations. Read [the proxy page documentation](http://developers.arcgis.com/en/javascript/jshelp/ags_proxy.html) for further details.
-- proxyUrl: the relative or absolute URL to the proxy page.
+- proxyUrl: the relative or absolute URL to the proxy page. In most cases, the default value is most appropriate.
 - labelColor: the label color, expressed as a hex string (e.g. "#738C3D").
 - locateEventUrl: the URL of the geoprocessing task used by the Locate Event tool.
 - locateEventInputParameterName: the feature set input parameter name for the Locate Event tool.
