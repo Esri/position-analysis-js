@@ -1,10 +1,30 @@
+/*******************************************************************************
+ * Copyright 2013 Esri
+ * 
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ * 
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *  
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ ******************************************************************************/
+ 
 /**
  * Try to put all configuration settings here.
  */
 var configOptions = {
     webmapTitle: "Position Analysis Web Map",
     webmapExtent: "70.3685, 34.3767, 70.546, 34.4962",
-    portalUrl: location.protocol + "//" + location.host + "/arcgis",
+    //Set the portal home URL
+    //EITHER use www.arcgis.com:
+    portalUrl: "https://www.arcgis.com",
+    //OR use the path to your portal (this example is for when the app is deployed on the same machine as Portal):
+    //portalUrl: location.protocol + "//" + location.host + "/arcgis",
     sharingPath: "/sharing/content/items",
     proxyRequired: true,
     labelColor: "#738C3D",
@@ -27,6 +47,7 @@ var configOptions = {
     shapeNamesUppercase: [ "SHAPE", "GEOMETRY", "GEOM" ]
 }
 configOptions.proxyUrl = configOptions.portalUrl + "/sharing/proxy";
+//Adjust these service URLs as needed.
 configOptions.locateEventUrl = configOptions.portalUrl + "/rest/services/Tasks/PositionAnalysis/GPServer/LocateEvent";
 configOptions.rangeRingsUrl = configOptions.portalUrl + "/rest/services/Tasks/PositionAnalysis/GPServer/RangeRings";
 configOptions.geometryServiceUrl = configOptions.portalUrl + "/rest/services/Utilities/Geometry/GeometryServer";

@@ -32,7 +32,7 @@
           like to choose a different directory, specify
           it on the Ant command line:
           
-          ant deploy -Ddir=C:\path\to\app\directory
+          ant deploy -Ddeploy.dir=C:\path\to\app\directory
 
 - generate-doc: generates the user documentation from
                 the contents of README.md. This will
