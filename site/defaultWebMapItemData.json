@@ -423,7 +423,7 @@
                                                 "width": 24,
                                                 "contentType": "image/png",
                                                 "type": "esriPMS",
-                                                "url": "https://afmcomstaging.esri.com/arcgis/portalimages/Symbols/Basic/GreenStickpin.png"
+                                                "url": "https://static.arcgis.com/images/Symbols/Basic/GreenStickpin.png"
                                             },
                                             "description": "",
                                             "value": "0",
@@ -437,7 +437,7 @@
                                                 "width": 24,
                                                 "contentType": "image/png",
                                                 "type": "esriPMS",
-                                                "url": "https://afmcomstaging.esri.com/arcgis/portalimages/Symbols/Basic/GreenShinyPin.png"
+                                                "url": "https://static.arcgis.com/images/Symbols/Basic/GreenShinyPin.png"
                                             },
                                             "value": "1",
                                             "label": "Pushpin"
@@ -640,7 +640,7 @@
                 "id": "TopographicMap_7179",
                 "opacity": 1,
                 "visibility": true,
-                "url": "https://afmcomstaging.esri.com/arcgis/rest/services/Basemaps/TopographicMap/MapServer",
+                "url": "http://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer",
                 "baseMapLayer": true,
                 "errors": [],
                 "resourceInfo": {
