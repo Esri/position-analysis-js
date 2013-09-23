@@ -1,8 +1,11 @@
 position-analysis-js
 ====================
 
+[Requirements](#requirements)  
 [Usage](#usage)  
 [Setup](#setup)  
+[Issues](#issues)   
+[Contributing](#contributing)   
 [Licensing](#licensing)  
 
 The Position Analysis Web template uses ArcGIS to perform position analysis in a browser. Users can select a variety of functions:
@@ -15,7 +18,14 @@ The Position Analysis Web template uses ArcGIS to perform position analysis in a
 
 ![Image of Position Analysis Web]( ScreenShot.png "position-analysis-js")
 
-<a id="usage"></a>
+## Requirements
+
+* Web server (HTTPS-enabled)
+* Access to available ArcGIS Portal or ArcGIS Online content
+* Notepad or HTML editor
+* Experience with HTML/CSS/Javascript
+* Experience with the [ArcGIS Javascript API](http://links.esri.com/javascript)
+
 ## Usage
 
 There are three main ways of launching the application:
@@ -77,7 +87,6 @@ Right-click a layer name to access some actions for that layer:
 - Remove Layer: not yet implemented.
 - Label Features: this action turns on and off labeling for the features in this layer.
 
-<a id="setup"></a>
 ## Setup
 
 The Position Analysis Web template uses Portal for ArcGIS 10.2+ or ArcGIS Online. You'll need the portal URL in order to set up the application.
@@ -127,7 +136,14 @@ Deploy the [site](site) directory as a Web application in your HTTPS-enabled Web
 
 Open index.html and edit the ArcGIS API for JavaScript URLs, including the JavaScript link and the CSS links. If using Portal for ArcGIS, you should use the ArcGIS API for JavaScript included with the portal.
 
-<a id="licensing"></a>
+## Issues
+
+Find a bug or want to request a new feature?  Please let us know by submitting an issue.
+
+## Contributing
+
+Esri welcomes contributions from anyone and everyone. Please see our [guidelines for contributing](https://github.com/esri/contributing).
+
 ## Licensing
 
 Copyright 2013 Esri
@@ -147,5 +163,5 @@ Portions of this code use third-party libraries:
 
 See [license-ThirdParty.txt](license-ThirdParty.txt) for the details of these licenses.
 
-[](Esri Tags: ArcGIS Defense and Intelligence Military Defense Portal HTML)
+[](Esri Tags: ArcGIS Defense Intelligence Military Defense Portal HTML)
 [](Esri Language: JavaScript)
