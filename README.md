@@ -158,7 +158,7 @@ A copy of the license is available in the repository's [license.txt](license.txt
 
 Portions of this code use third-party libraries:
 
-- USNG and Downloadify are licensed under the MIT License.
+- [USNG](http://dhost.info/usngweb/help_usng.html) and Downloadify are licensed under the MIT License.
 - The Ant build file uses markdown4j, which is licensed under the BSD 3-Clause License.
 
 See [license-ThirdParty.txt](license-ThirdParty.txt) for the details of these licenses.
