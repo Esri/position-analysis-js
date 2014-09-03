@@ -163,5 +163,5 @@ Portions of this code use third-party libraries:
 
 See [license-ThirdParty.txt](license-ThirdParty.txt) for the details of these licenses.
 
-[](Esri Tags: ArcGIS Defense Intelligence Military Defense Portal HTML)
+[](Esri Tags: ArcGIS Defense Intelligence Military Defense Portal HTML ArcGISSolutions)
 [](Esri Language: JavaScript)
